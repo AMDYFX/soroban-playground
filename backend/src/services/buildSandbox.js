@@ -83,7 +83,11 @@ export function createSandboxEnv(baseEnv, sandboxPaths) {
   env.HOME = env.HOME || os.homedir();
   env.TMP = env.TMP || env.TEMP || os.tmpdir();
   env.TEMP = env.TEMP || env.TMP;
-  env.CARGO_HOME = sandboxPaths.cargoHome;
+  env.CARGO_HOME =
+    process.env.COMPILE_SHARED_CARGO_HOME ||
+    (process.env.DISABLE_SANDBOX_LIMITS === 'true' &&
+      (baseEnv.CARGO_HOME || path.join(os.homedir(), '.cargo'))) ||
+    sandboxPaths.cargoHome;
   env.CARGO_TARGET_DIR = sandboxPaths.cargoTargetDir;
   env.RUST_MIN_STACK = '268435456';
   env.CARGO_TERM_COLOR = 'never';

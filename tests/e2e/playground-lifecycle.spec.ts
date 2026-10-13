@@ -178,6 +178,9 @@ test.describe("playground lifecycle", () => {
     // asserted separately in the unit suite.
     await page.addInitScript(() => {
       (window as unknown as { __CSP_RELAXED__?: boolean }).__CSP_RELAXED__ = true;
+      try {
+        window.sessionStorage.setItem("render_warning_seen", "true");
+      } catch {}
     });
   });
 

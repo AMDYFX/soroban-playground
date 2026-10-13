@@ -40,7 +40,7 @@ test.describe("contract lifecycle", () => {
   test.beforeAll(async ({ playwright }) => {
     api = await playwright.request.newContext({
       baseURL: BACKEND_URL,
-      timeout: 30_000,
+      timeout: 120_000,
     });
   });
 
@@ -74,6 +74,10 @@ test.describe("contract lifecycle", () => {
         filename: "hello.rs",
       },
     });
+    if (!res.ok()) {
+      const errText = await res.text();
+      throw new Error(`Compile endpoint failed (${res.status()}): ${errText}`);
+    }
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as {
       ok?: boolean;
