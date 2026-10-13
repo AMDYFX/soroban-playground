@@ -150,7 +150,7 @@ export const ENV_SCHEMA = z.object({
 
   // ─ CORS ────────────────────────────────────────────────────────────────────
   CORS_ALLOWED_ORIGINS: z.string().optional().default('*'),
-  CORS_ALLOW_CREDENTIALS: booleanEnv.default(false),
+  CORS_ALLOW_CREDENTIALS: booleanEnv(false),
 
   // ─ Rate Limiting ───────────────────────────────────────────────────────────
   GLOBAL_RATE_LIMIT_WINDOW_MS: intEnv(60_000),
@@ -159,14 +159,14 @@ export const ENV_SCHEMA = z.object({
   DEPLOY_RATE_LIMIT_MAX: intEnv(15),
 
   // ─ Tracing ─────────────────────────────────────────────────────────────────
-  TRACING_ENABLED: booleanEnv.default(false),
+  TRACING_ENABLED: booleanEnv(false),
   TRACING_SERVICE_NAME: z
     .string()
     .optional()
     .default('soroban-playground-backend'),
 
   // ─ Backup ──────────────────────────────────────────────────────────────────
-  BACKUP_ENABLED: booleanEnv.default(false),
+  BACKUP_ENABLED: booleanEnv(false),
   BACKUP_S3_BUCKET: z.string().optional(),
   BACKUP_ENCRYPTION_KEY: z.string().optional(),
 });

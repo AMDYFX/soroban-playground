@@ -300,11 +300,11 @@ networks:
   # Application plane: frontend <-> backend <-> indexer.
   api-net:
     driver: bridge
-    internal: true
   # Internal-only network for stateful services: no egress, no host exposure.
   data-net:
     driver: bridge
     internal: true
+
 
 secrets:
   postgres_password:

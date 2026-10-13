@@ -393,4 +393,8 @@ process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
 export { app, server, start, shutdown };
-start();
+export default app;
+
+if (process.env.NODE_ENV !== 'test' || process.env.LISTEN_IN_TEST === 'true') {
+  start();
+}

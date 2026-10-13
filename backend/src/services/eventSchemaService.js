@@ -688,6 +688,8 @@ class EventSchemaService {
 
 const eventSchemaService = new EventSchemaService();
 
+export default eventSchemaService;
+
 export {
   EventSchemaService,
   eventSchemaService,

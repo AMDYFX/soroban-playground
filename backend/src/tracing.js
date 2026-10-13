@@ -1,6 +1,7 @@
+import { createRequire } from 'module';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
+
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import {
@@ -11,10 +12,11 @@ import {
 import resourcesPkg from '@opentelemetry/resources';
 
 const Resource =
-  resourcesPkg.Resource ||
-  resourcesPkg.default?.Resource ||
-  resourcesPkg.default ||
+  resourcesPkg?.Resource ||
+  resourcesPkg?.default?.Resource ||
+  resourcesPkg?.default ||
   resourcesPkg;
+
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 import config from './config/index.js';
@@ -74,18 +76,39 @@ export function initializeTracing() {
       process.pid.toString(),
   };
 
-  const resource = new Resource(resourceAttrs);
+  const createResource = (attrs) => {
+    if (typeof resourcesPkg.resourceFromAttributes === 'function') {
+      return resourcesPkg.resourceFromAttributes(attrs);
+    }
+    if (typeof resourcesPkg.default?.resourceFromAttributes === 'function') {
+      return resourcesPkg.default.resourceFromAttributes(attrs);
+    }
+    if (typeof Resource === 'function') {
+      try {
+        return new Resource(attrs);
+      } catch {}
+    }
+    return attrs;
+  };
+
+  const resource = createResource(resourceAttrs);
 
   const exporters = [];
 
   // Jaeger exporter
   if (config.tracing.jaegerEndpoint) {
-    const jaegerExporter = new JaegerExporter({
-      endpoint: config.tracing.jaegerEndpoint,
-      username: process.env.JAEGER_USER,
-      password: process.env.JAEGER_PASSWORD,
-    });
-    exporters.push(jaegerExporter);
+    try {
+      const require = createRequire(import.meta.url);
+      const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
+      const jaegerExporter = new JaegerExporter({
+        endpoint: config.tracing.jaegerEndpoint,
+        username: process.env.JAEGER_USER,
+        password: process.env.JAEGER_PASSWORD,
+      });
+      exporters.push(jaegerExporter);
+    } catch (err) {
+      console.warn('Failed to initialize JaegerExporter:', err.message);
+    }
   }
 
   // Zipkin exporter

@@ -431,8 +431,13 @@ class WorkerPool {
         };
 
         const onMessage = (message) => {
+          if (message?.type === 'progress') {
+            queueBus.emit('progress', message.payload);
+            return;
+          }
           cleanup();
-          resolve(message);
+          const result = message?.payload || message;
+          resolve(result);
         };
 
         const onError = (err) => {
@@ -471,11 +476,133 @@ function setSpanStatus(span, status) {
   }
 }
 
-// Export the compile service object
+const workerPool = new WorkerPool(MAX_WORKERS);
+
+export async function compile(job) {
+  validateCompileJob(job);
+  const hash = hashSource(job.code, job.dependencies || {});
+  const cached = await loadCacheEntryFromCache(hash);
+  if (cached) {
+    cacheHits += 1;
+    return { ...cached, cached: true };
+  }
+  const result = await executeUnderLock(hash, job.requestId, async () => {
+    return workerPool.run({ ...job, hash });
+  });
+  if (result?.success) {
+    await recordArtifact({ ...result, hash });
+  }
+
+  return result;
+}
+
+export async function compileQueued(job) {
+  return compile(job);
+}
+
+export async function compileBatch(jobs) {
+  if (!Array.isArray(jobs) || jobs.length === 0) {
+    throw new CompileValidationError('jobs must be a non-empty array', {
+      code: 'INVALID_COMPILE_BATCH',
+    });
+  }
+
+  const ordered = jobs.slice(0, MAX_BATCH_JOBS);
+  const settled = await Promise.allSettled(
+    ordered.map((job) => compileQueued(job))
+  );
+
+  return settled.map((result, index) => ({
+    contractIndex: index,
+    ...result,
+    ...(result.status === 'rejected'
+      ? {
+          error: {
+            message: result.reason?.message || 'Unknown compile error',
+            code: result.reason?.code || 'COMPILE_FAILED',
+            details: result.reason?.details || [],
+          },
+        }
+      : {}),
+  }));
+}
+
+export async function compileContract({
+  source,
+  contractName = 'soroban_contract',
+} = {}) {
+  const job = {
+    code: source,
+    dependencies: {},
+    requestId: `async-${contractName}-${Date.now()}`,
+  };
+
+  const result = await compileQueued(job);
+
+  if (!result.success) {
+    const error = new Error(
+      (result.logs || []).join('\n') || 'Compilation failed'
+    );
+    error.code = 'COMPILE_FAILED';
+    throw error;
+  }
+
+  return {
+    hash: result.hash,
+    wasmUrl: result.artifact?.path || '',
+    sizeBytes: result.artifact?.sizeBytes || 0,
+    durationMs: result.durationMs,
+  };
+}
+
+export function getCompileStats() {
+  return {
+    totalCompiles,
+    cacheHits,
+    slowCompiles,
+    memoryPeakBytes,
+    active,
+    queueLength: queue.length,
+  };
+}
+
+export async function getCompileSnapshot() {
+  const state = await readState().catch(() => ({}));
+  return {
+    ...getCompileStats(),
+    history: state.history || [],
+    artifacts: state.artifacts || [],
+  };
+}
+
+export async function init() {
+  await ensureDirs();
+  await hydrateState();
+  await evictExpiredArtifacts();
+  await enforceCacheLimit();
+  await initializeCacheService([...artifacts.keys()]);
+}
+
+export async function initializeCompileService() {
+  return init();
+}
+
+export async function shutdown() {
+  await workerPool.shutdown();
+}
+
+export { workerPool, queueBus as compileProgressBus };
+
 export const compileService = {
   validateCompileJob,
   hashSource,
-  async compile(job) {
-    // TODO: implement compile logic
-  },
+  compile,
+  compileQueued,
+  compileBatch,
+  compileContract,
+  getCompileStats,
+  getCompileSnapshot,
+  init,
+  initializeCompileService,
+  shutdown,
 };

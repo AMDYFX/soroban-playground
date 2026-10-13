@@ -7,13 +7,8 @@ import {
   addSpanEvent,
   injectTraceContext,
 } from '../utils/tracing.js';
-const {
-  recordTamperEvidentAuditLog,
-} = require('./tamperEvidentAuditLogger.js');
-const {
-  spawnTracked,
-  terminateChildProcess,
-} = require('./childProcessManager.js');
+import { recordTamperEvidentAuditLog } from './tamperEvidentAuditLogger.js';
+import { spawnTracked, terminateChildProcess } from './childProcessManager.js';
 
 const MAX_CONCURRENT = Number.parseInt(process.env.INVOKE_POOL_SIZE || '3', 10);
 const INVOKE_TIMEOUT_MS = Number.parseInt(
@@ -119,7 +114,8 @@ export function createCliArgs(request) {
     sourceAccount,
     '--network',
     request.network || process.env.DEFAULT_NETWORK || 'testnet',
-    '--'.request.functionName,
+    '--',
+    request.functionName,
   ];
 
   for (const [key, value] of Object.entries(request.args || {})) {
@@ -476,3 +472,16 @@ export async function invokeSorobanContract(request, { signal } = {}) {
     span.end();
   }
 }
+
+export const invokeContract = invokeSorobanContract;
+
+export default {
+  invokeContract,
+  invokeSorobanContract,
+  validateInvocationRequest,
+  createCliArgs,
+  parseCliOutput,
+  getInvocationQueueStats,
+  invokeProgressBus,
+  buildCallGraph,
+};

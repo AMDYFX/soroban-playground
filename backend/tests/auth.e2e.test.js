@@ -44,6 +44,14 @@ jest.mock('../src/services/redisService.js', () => ({
       resetTime: Date.now() + 60000,
       total: 1,
     }),
+    setNX: jest.fn().mockImplementation(async (key, value) => {
+      if (!mockStore.has(key)) {
+        mockStore.set(key, value);
+        return 'OK';
+      }
+      return null;
+    }),
+    logAnalytics: jest.fn().mockResolvedValue(undefined),
     client: {
       quit: jest.fn().mockResolvedValue('OK'),
     },

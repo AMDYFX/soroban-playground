@@ -3,8 +3,11 @@ import {
   asyncHandler,
   createHttpError,
 } from '../../middleware/errorHandler.js';
-import { invokeSorobanContract } from '../../services/invokeService.js';
-const { buildCallGraph } = require('../../services/invokeService.js');
+import {
+  invokeSorobanContract,
+  buildCallGraph,
+} from '../../services/invokeService.js';
+
 import { rateLimitMiddleware } from '../../middleware/rateLimiter.js';
 import { validateRequest } from '../../middleware/validation.js';
 import { invokeBodyV2 } from '../../schemas/sorobanSchemas.js';

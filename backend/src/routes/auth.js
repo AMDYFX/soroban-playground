@@ -170,7 +170,12 @@ router.post('/logout', async (req, res) => {
         req.cookies?.accessToken ||
         req.headers.authorization?.replace(/^Bearer /, '');
       if (accessToken) user = await authService.verifyAccessToken(accessToken);
-    } catch {
+    } catch (err) {
+      if (err.message === 'Token is blacklisted') {
+        return res
+          .status(401)
+          .json({ error: 'Token is invalid or blacklisted' });
+      }
       // Expired access cookies must not prevent refresh-session revocation.
     }
     if (user && user.jti && user.exp) {
