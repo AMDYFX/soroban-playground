@@ -1,6 +1,9 @@
 /** @ndswc type */
 
-const withBundleAnalyzer = require('@next/bundle-analyzer');
+let withBundleAnalyzer = () => (cfg) => cfg;
+try {
+  withBundleAnalyzer = require('@next/bundle-analyzer');
+} catch {}
 
 /** @param {import('next').NextConfig} config */
 function buildConfig(config) {
@@ -32,6 +35,13 @@ function buildConfig(config) {
       // Split large vendor libraries into dedicated async chunks so they do not
       // count against the first-load JS budget.
       if (!isServer) {
+        config.resolve = config.resolve || {};
+        config.resolve.fallback = {
+          ...config.resolve.fallback,
+          fs: false,
+          path: false,
+        };
+
         config.optimization = {
           ...config.optimization,
           splitChunks: {

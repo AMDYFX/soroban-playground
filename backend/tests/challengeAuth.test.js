@@ -59,7 +59,8 @@ function mockReq(overrides = {}) {
   };
 }
 
-const TEST_PUBLIC_KEY = 'GAKEYTEST000000000000000000000000000000000000000000000000';
+const TEST_PUBLIC_KEY =
+  'GAKEYTEST000000000000000000000000000000000000000000000000';
 
 beforeEach(() => {
   store.clear();
@@ -115,15 +116,18 @@ describe('consumeNonce', () => {
   });
 
   it('throws when nonce is expired / never issued', async () => {
-    await expect(consumeNonce('nonexistent-nonce', TEST_PUBLIC_KEY)).rejects.toThrow(
-      /not found or expired/
-    );
+    await expect(
+      consumeNonce('nonexistent-nonce', TEST_PUBLIC_KEY)
+    ).rejects.toThrow(/not found or expired/);
   });
 
   it('throws when nonce is used for a different public key', async () => {
     const nonce = await generateNonce(TEST_PUBLIC_KEY);
     await expect(
-      consumeNonce(nonce, 'GDIFFERENTKEY00000000000000000000000000000000000000000000')
+      consumeNonce(
+        nonce,
+        'GDIFFERENTKEY00000000000000000000000000000000000000000000'
+      )
     ).rejects.toThrow(/different public key/);
   });
 
@@ -212,7 +216,9 @@ describe('verifyJwtMiddleware', () => {
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.stringContaining('missing token') })
+      expect.objectContaining({
+        error: expect.stringContaining('missing token'),
+      })
     );
     expect(next).not.toHaveBeenCalled();
   });
@@ -256,7 +262,9 @@ describe('requireNonce', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.stringContaining('X-Request-Nonce') })
+      expect.objectContaining({
+        error: expect.stringContaining('X-Request-Nonce'),
+      })
     );
   });
 

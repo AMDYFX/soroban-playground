@@ -95,12 +95,17 @@ export function validateStellarSignature(req, res, next) {
     const network = (req.body && req.body.network) || 'testnet';
     if (network !== 'testnet' && network !== 'futurenet') {
       return next(
-        new HttpError(401, 'Mock auth bypass is only allowed on testnet/futurenet', {
-          reason: 'mock_bypass_forbidden',
-        })
+        new HttpError(
+          401,
+          'Mock auth bypass is only allowed on testnet/futurenet',
+          {
+            reason: 'mock_bypass_forbidden',
+          }
+        )
       );
     }
-    req.signerAddress = mockAuth.callerAddress || req.body.callerAddress || null;
+    req.signerAddress =
+      mockAuth.callerAddress || req.body.callerAddress || null;
     req.mockAuthBypassed = true;
     return next();
   }

@@ -162,7 +162,7 @@ export function computeContentIdentifier(content) {
 function encodeBase32(buffer) {
   const alphabet = 'abcdefghijklmnopqrstuvwxyz234567';
   let bits = 0;
- let value = 0;
+  let value = 0;
   let output = '';
   for (const byte of buffer) {
     value = (value << 8) | byte;
@@ -485,7 +485,9 @@ export class StorageService {
       throw new Error('disputeId is required to upload dispute evidence');
     }
     const content =
-      typeof evidence === 'string' ? evidence : JSON.stringify(evidence, null, 2);
+      typeof evidence === 'string'
+        ? evidence
+        : JSON.stringify(evidence, null, 2);
     const buffer = Buffer.from(content);
     const contentHash = computeContentHash(buffer);
     const key = generatePatentStorageKey(

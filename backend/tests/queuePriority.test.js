@@ -120,8 +120,10 @@ const queueService = await import('../src/services/queueService.js');
 
 function initQueues() {
   // Clear any previously-set queue/worker state
-  for (const k of Object.keys(queueService.queues)) delete queueService.queues[k];
-  for (const k of Object.keys(queueService.workers)) delete queueService.workers[k];
+  for (const k of Object.keys(queueService.queues))
+    delete queueService.queues[k];
+  for (const k of Object.keys(queueService.workers))
+    delete queueService.workers[k];
   process.env.NODE_ENV = 'test';
   queueService.initializeQueues();
 }
@@ -155,7 +157,11 @@ describe('addCompilationJob / addDeploymentJob', () => {
 
   it('addCompilationJob respects CRITICAL tier', async () => {
     mockQueueAdd.mockResolvedValue({ id: 'c2' });
-    await queueService.addCompilationJob('urgent', { source: '...' }, 'CRITICAL');
+    await queueService.addCompilationJob(
+      'urgent',
+      { source: '...' },
+      'CRITICAL'
+    );
     expect(mockQueueAdd).toHaveBeenCalledWith(
       'urgent',
       { source: '...' },
@@ -238,7 +244,12 @@ describe('deleteDlqJob', () => {
   });
 
   it('removes the job and returns { removed: true }', async () => {
-    const fakeJob = { id: 'dlq-del-1', name: 'compile', data: {}, remove: mockJobRemove };
+    const fakeJob = {
+      id: 'dlq-del-1',
+      name: 'compile',
+      data: {},
+      remove: mockJobRemove,
+    };
     mockQueueGetJob.mockResolvedValue(fakeJob);
     mockJobRemove.mockResolvedValue(undefined);
 
@@ -265,7 +276,13 @@ describe('getQueueMetrics', () => {
   });
 
   it('returns job counts for all queues', async () => {
-    const fakeCounts = { waiting: 2, active: 1, completed: 10, failed: 0, delayed: 0 };
+    const fakeCounts = {
+      waiting: 2,
+      active: 1,
+      completed: 10,
+      failed: 0,
+      delayed: 0,
+    };
     mockQueueGetJobCounts.mockResolvedValue(fakeCounts);
 
     const metrics = await queueService.getQueueMetrics();

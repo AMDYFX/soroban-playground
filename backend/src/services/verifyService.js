@@ -7,7 +7,8 @@ import path from 'path';
 import * as StellarSdk from '@stellar/stellar-sdk';
 const { StrKey } = StellarSdk;
 const SorobanRpc = StellarSdk.rpc || StellarSdk.SorobanRpc;
-import DatabaseService from './databaseService.js';import { compileQueued } from './compileService.js';
+import DatabaseService from './databaseService.js';
+import { compileQueued } from './compileService.js';
 import { sanitizeDependenciesInput } from '../routes/compile_utils.js';
 
 const CONTRACT_ID_REGEX = /^C[A-Z0-9]{55}$/;
@@ -522,11 +523,7 @@ export class VerifyService {
         updatedAt: this.now(),
       });
       if (error instanceof VerificationError) throw error;
-      throw new VerificationError(
-        500,
-        'VERIFICATION_FAILED',
-        details.message
-      );
+      throw new VerificationError(500, 'VERIFICATION_FAILED', details.message);
     }
   }
 

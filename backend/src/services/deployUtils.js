@@ -91,7 +91,7 @@ export const DEPLOY_STEPS = Object.freeze([
 export function buildDeployPlanPayload(contracts, defaultNetwork) {
   validateBatchContractsInput(contracts);
   const normalized = contracts.map((contract, index) =>
-    normalizeBatchContract(contract, index, defaultNetwork),
+    normalizeBatchContract(contract, index, defaultNetwork)
   );
   const ordered = topoSortContracts(normalized);
   return {
@@ -125,7 +125,7 @@ export function buildStellarExpertVerificationPayload({
     network: resolvedNetwork,
     contractName: contractName || null,
     source: 'soroban-playground',
-  submittedAt: new Date().toISOString(),
+    submittedAt: new Date().toISOString(),
   };
 }
 

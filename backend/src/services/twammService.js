@@ -204,16 +204,21 @@ class TwammService {
 
     let amountOut;
     if (sellA) {
-      amountOut = Math.floor((reserveB * effectiveIn) / (reserveA + effectiveIn));
+      amountOut = Math.floor(
+        (reserveB * effectiveIn) / (reserveA + effectiveIn)
+      );
       this.pool.reserveA += effectiveIn;
       this.pool.reserveB -= amountOut;
     } else {
-      amountOut = Math.floor((reserveA * effectiveIn) / (reserveB + effectiveIn));
+      amountOut = Math.floor(
+        (reserveA * effectiveIn) / (reserveB + effectiveIn)
+      );
       this.pool.reserveB += effectiveIn;
       this.pool.reserveA -= amountOut;
     }
 
-    if (amountOut < minOut) throw new Error('Insufficient output: slippage exceeded');
+    if (amountOut < minOut)
+      throw new Error('Insufficient output: slippage exceeded');
     if (this.pool.reserveA <= 0 || this.pool.reserveB <= 0)
       throw new Error('Insufficient liquidity');
 
@@ -264,7 +269,7 @@ class TwammService {
 
     // Fixed-point rate per ledger (stored as BigInt for precision but serialised as string).
     const ratePerLedger = Number(
-      fpDiv(BigInt(amount) * SCALE, BigInt(durationLedgers) * SCALE),
+      fpDiv(BigInt(amount) * SCALE, BigInt(durationLedgers) * SCALE)
     );
 
     this.orderSeq += 1;
@@ -323,7 +328,12 @@ class TwammService {
     // Recompute aggregate rates.
     recomputeRates(this.pool, this.orders, this.currentLedger);
 
-    return { orderId, refund, executedAmount: order.executedAmount, status: 'Cancelled' };
+    return {
+      orderId,
+      refund,
+      executedAmount: order.executedAmount,
+      status: 'Cancelled',
+    };
   }
 
   /**
@@ -386,7 +396,10 @@ class TwammService {
         spotPrice: this.pool ? this.spotPrice() : null,
         currentLedger: this.currentLedger,
       },
-      recentOrders: this.orders.slice(-10).reverse().map((o) => clone(o)),
+      recentOrders: this.orders
+        .slice(-10)
+        .reverse()
+        .map((o) => clone(o)),
     };
   }
 

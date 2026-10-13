@@ -21,7 +21,7 @@ const ENV_ALLOWLIST = [
   'TMP',
   'TEMP',
   'HOME',
-  $USERPROFILE',
+  'USERPROFILE',
   'RUSTUP_HOME',
   'RUSTUP_TOOLCHAIN',
 ];

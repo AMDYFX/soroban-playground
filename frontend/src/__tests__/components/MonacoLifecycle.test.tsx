@@ -19,9 +19,12 @@ jest.mock("monaco-editor", () => {
     onDidChangeModelContent: jest.fn().mockReturnValue({ dispose: jest.fn() }),
     saveViewState: jest.fn().mockReturnValue({ cursorState: [], viewState: { scrollTop: 10 } }),
     restoreViewState: jest.fn(),
+    addAction: jest.fn(),
   };
   return {
     __esModule: true,
+    KeyMod: { CtrlCmd: 2048 },
+    KeyCode: { KeyS: 49 },
     editor: {
       create: jest.fn().mockReturnValue(editor),
       setModelMarkers: jest.fn(),
@@ -30,7 +33,7 @@ jest.mock("monaco-editor", () => {
       MarkerSeverity: { Error: 1, Warning: 2, Info: 3 },
     },
   };
-});
+}, { virtual: true });
 
 jest.mock("@/hooks/useCollaborativeEditor", () => ({
   useCollaborativeEditor: () => ({ peers: [], isConnected: false }),

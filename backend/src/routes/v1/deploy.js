@@ -6,7 +6,10 @@ import {
   asyncHandler,
   createHttpError,
 } from '../../middleware/errorHandler.js';
-import { deployBatchContracts, deployContract } from '../../services/deployService.js';
+import {
+  deployBatchContracts,
+  deployContract,
+} from '../../services/deployService.js';
 import { rateLimitMiddleware } from '../../middleware/rateLimiter.js';
 import { validateRequest } from '../../middleware/validation.js';
 import {

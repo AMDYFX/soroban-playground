@@ -20,29 +20,25 @@ import { z } from 'zod';
 
 /** Accept common truthy / falsy string representations */
 const booleanEnv = (defaultVal = false) =>
-  z
-    .union([z.string(), z.boolean(), z.undefined()])
-    .transform((v) => {
-      if (v === undefined || v === null) return defaultVal;
-      if (typeof v === 'boolean') return v;
-      const s = v.trim().toLowerCase();
-      if (['true', '1', 'yes', 'on'].includes(s)) return true;
-      if (['false', '0', 'no', 'off', ''].includes(s)) return false;
-      return defaultVal;
-    });
+  z.union([z.string(), z.boolean(), z.undefined()]).transform((v) => {
+    if (v === undefined || v === null) return defaultVal;
+    if (typeof v === 'boolean') return v;
+    const s = v.trim().toLowerCase();
+    if (['true', '1', 'yes', 'on'].includes(s)) return true;
+    if (['false', '0', 'no', 'off', ''].includes(s)) return false;
+    return defaultVal;
+  });
 
 /** Parse a numeric string; coerce to integer */
 const intEnv = (def) =>
-  z
-    .union([z.string(), z.number(), z.undefined()])
-    .transform((v) => {
-      if (v === undefined || v === null) return def;
-      if (typeof v === 'number') return Number.isNaN(v) ? def : Math.trunc(v);
-      const s = v.trim();
-      if (s === '') return def;
-      const n = Number.parseInt(s, 10);
-      return Number.isNaN(n) ? def : n;
-    });
+  z.union([z.string(), z.number(), z.undefined()]).transform((v) => {
+    if (v === undefined || v === null) return def;
+    if (typeof v === 'number') return Number.isNaN(v) ? def : Math.trunc(v);
+    const s = v.trim();
+    if (s === '') return def;
+    const n = Number.parseInt(s, 10);
+    return Number.isNaN(n) ? def : n;
+  });
 
 /** Parse a URL string (non-empty) */
 const urlEnv = z.string().url();
@@ -112,7 +108,10 @@ export const ENV_SCHEMA = z.object({
 
   // ─ Database ────────────────────────────────────────────────────────────────
   DATABASE_URL: z.string().min(1).default('sqlite://data/soroban.db'),
-  DB_TYPE: z.enum(['sqlite', 'postgresql', 'mysql']).optional().default('sqlite'),
+  DB_TYPE: z
+    .enum(['sqlite', 'postgresql', 'mysql'])
+    .optional()
+    .default('sqlite'),
 
   // ─ Redis ───────────────────────────────────────────────────────────────────
   REDIS_URL: z.string().min(1).default('redis://localhost:6379'),
@@ -161,7 +160,10 @@ export const ENV_SCHEMA = z.object({
 
   // ─ Tracing ─────────────────────────────────────────────────────────────────
   TRACING_ENABLED: booleanEnv.default(false),
-  TRACING_SERVICE_NAME: z.string().optional().default('soroban-playground-backend'),
+  TRACING_SERVICE_NAME: z
+    .string()
+    .optional()
+    .default('soroban-playground-backend'),
 
   // ─ Backup ──────────────────────────────────────────────────────────────────
   BACKUP_ENABLED: booleanEnv.default(false),
@@ -189,7 +191,10 @@ export const ENV_SCHEMA = z.object({
  *                                      defaults are also treated as errors
  * @returns {EnvValidationResult}
  */
-export function validateEnvSchema(rawEnv = process.env, { strict = false } = {}) {
+export function validateEnvSchema(
+  rawEnv = process.env,
+  { strict = false } = {}
+) {
   const errors = [];
   const warnings = [];
 

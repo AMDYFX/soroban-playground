@@ -10,6 +10,7 @@ import React, {
   ReactNode,
 } from "react";
 import type { ModuleInterface } from "@creit.tech/stellar-wallets-kit/types";
+import { walletRegistry } from "@/lib/wallets";
 
 export type WalletType =
   "freighter" | "albedo" | "xbull" | "hana" | "walletconnect" | "ledger";
@@ -401,7 +402,35 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        const kit = await initializeWalletKit();
+        let kit: any = null;
+        try {
+          kit = await initializeWalletKit();
+        } catch (kitErr) {
+          const adapter = walletRegistry.get(type as any);
+          if (adapter) {
+            const res = await adapter.connect(auto);
+            setActiveWallet(type);
+            setActiveAccount(res.address);
+            setAllAccounts(
+              res.allAccounts || [
+                { address: res.address, name: `${type} Account` },
+              ],
+            );
+            setNetwork(res.network || "TESTNET");
+            setNetworkPassphrase(TESTNET_PASSPHRASE);
+            setStatus("connected");
+            setLastAttemptedWallet(null);
+            if (typeof window !== "undefined") {
+              try {
+                window.localStorage.setItem("preferred_wallet", type);
+                window.localStorage.setItem("preferred_account", res.address);
+              } catch {}
+            }
+            return;
+          }
+          throw kitErr;
+        }
+
         const availableWallets = await refreshWallets();
 
         if (!availableWallets.has(type)) {
@@ -624,6 +653,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     window.addEventListener("soroban-network-change", syncSelectedNetwork);
     return () =>
       window.removeEventListener("soroban-network-change", syncSelectedNetwork);
+  }, [activeWallet]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !activeWallet) return;
+    const adapter = walletRegistry.get(activeWallet as any);
+    if (!adapter) return;
+
+    const unsubAccount = adapter.onAccountChange?.((address) => {
+      setActiveAccount(address);
+      try {
+        window.localStorage.setItem("preferred_account", address);
+      } catch {}
+    });
+
+    const unsubNetwork = adapter.onNetworkChange?.((net) => {
+      setNetwork(net);
+    });
+
+    return () => {
+      unsubAccount?.();
+      unsubNetwork?.();
+    };
   }, [activeWallet]);
 
   useEffect(() => {

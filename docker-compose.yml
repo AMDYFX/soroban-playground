@@ -159,6 +159,7 @@ services:
       # Dual-write every indexed event to the Postgres service.
       # Credentials are injected from Docker secrets, not compose defaults.
       - SECONDARY_DATABASE_URL_FILE=/run/secrets/postgres_url
+      - SECONDARY_DATABASE_URL=postgres://${POSTGRES_USER:-soroban}:${POSTGRES_PASSWORD:-soroban_dev_password}@postgres:5432/${POSTGRES_DB:-soroban_playground}
     secrets:
       - postgres_password
       - postgres_url

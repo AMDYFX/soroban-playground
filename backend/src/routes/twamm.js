@@ -21,7 +21,9 @@ function isPositiveNumber(v) {
 }
 
 function ok(res, data, message = 'Success', status = 200) {
-  return res.status(status).json({ success: true, status: 'success', message, data });
+  return res
+    .status(status)
+    .json({ success: true, status: 'success', message, data });
 }
 
 function fail(res, statusCode, message, details) {
@@ -75,11 +77,15 @@ router.get('/health', (_req, res) => {
 router.post('/initialize', (req, res) => {
   const actor = actorFrom(req);
   const errors = [];
-  if (!isPositiveNumber(req.body?.initialA)) errors.push('initialA must be a positive number');
-  if (!isPositiveNumber(req.body?.initialB)) errors.push('initialB must be a positive number');
+  if (!isPositiveNumber(req.body?.initialA))
+    errors.push('initialA must be a positive number');
+  if (!isPositiveNumber(req.body?.initialB))
+    errors.push('initialB must be a positive number');
   if (
     req.body?.feeBps !== undefined &&
-    (!Number.isInteger(req.body.feeBps) || req.body.feeBps < 0 || req.body.feeBps > 1000)
+    (!Number.isInteger(req.body.feeBps) ||
+      req.body.feeBps < 0 ||
+      req.body.feeBps > 1000)
   ) {
     errors.push('feeBps must be an integer 0-1000');
   }
@@ -91,7 +97,7 @@ router.post('/initialize', (req, res) => {
       adminAddr,
       req.body.initialA,
       req.body.initialB,
-      req.body.feeBps ?? 30,
+      req.body.feeBps ?? 30
     );
     return ok(res, pool, 'Pool initialized', 201);
   } catch (err) {
@@ -132,8 +138,10 @@ router.post('/pool/swap', (req, res) => {
   const actor = actorFrom(req);
   const errors = [];
   if (!actor) errors.push('actor is required');
-  if (typeof req.body?.sellA !== 'boolean') errors.push('sellA must be a boolean');
-  if (!isPositiveNumber(req.body?.amountIn)) errors.push('amountIn must be a positive number');
+  if (typeof req.body?.sellA !== 'boolean')
+    errors.push('sellA must be a boolean');
+  if (!isPositiveNumber(req.body?.amountIn))
+    errors.push('amountIn must be a positive number');
   if (errors.length) return fail(res, 400, 'Validation failed', errors);
 
   try {
@@ -141,7 +149,7 @@ router.post('/pool/swap', (req, res) => {
       actor,
       req.body.sellA,
       req.body.amountIn,
-      req.body.minOut ?? 0,
+      req.body.minOut ?? 0
     );
     return ok(res, result, 'Swap executed');
   } catch (err) {
@@ -157,12 +165,18 @@ router.post('/pool/liquidity', (req, res) => {
   const actor = actorFrom(req);
   const errors = [];
   if (!actor) errors.push('actor is required');
-  if (!isPositiveNumber(req.body?.amountA)) errors.push('amountA must be a positive number');
-  if (!isPositiveNumber(req.body?.amountB)) errors.push('amountB must be a positive number');
+  if (!isPositiveNumber(req.body?.amountA))
+    errors.push('amountA must be a positive number');
+  if (!isPositiveNumber(req.body?.amountB))
+    errors.push('amountB must be a positive number');
   if (errors.length) return fail(res, 400, 'Validation failed', errors);
 
   try {
-    const result = twammService.addLiquidity(actor, req.body.amountA, req.body.amountB);
+    const result = twammService.addLiquidity(
+      actor,
+      req.body.amountA,
+      req.body.amountB
+    );
     return ok(res, result, 'Liquidity added', 201);
   } catch (err) {
     return fail(res, 400, err.message);
@@ -204,8 +218,10 @@ router.post('/orders', (req, res) => {
   const actor = actorFrom(req);
   const errors = [];
   if (!actor) errors.push('actor is required');
-  if (typeof req.body?.sellA !== 'boolean') errors.push('sellA must be a boolean');
-  if (!isPositiveNumber(req.body?.amount)) errors.push('amount must be a positive number');
+  if (typeof req.body?.sellA !== 'boolean')
+    errors.push('sellA must be a boolean');
+  if (!isPositiveNumber(req.body?.amount))
+    errors.push('amount must be a positive number');
   if (
     !Number.isInteger(req.body?.durationLedgers) ||
     req.body.durationLedgers <= 0
@@ -219,7 +235,7 @@ router.post('/orders', (req, res) => {
       actor,
       req.body.sellA,
       req.body.amount,
-      req.body.durationLedgers,
+      req.body.durationLedgers
     );
     return ok(res, order, 'TWAMM order submitted', 201);
   } catch (err) {
@@ -289,7 +305,11 @@ router.post('/admin/fee', (req, res) => {
   const actor = actorFrom(req);
   const errors = [];
   if (!actor) errors.push('actor is required');
-  if (!Number.isInteger(req.body?.feeBps) || req.body.feeBps < 0 || req.body.feeBps > 1000)
+  if (
+    !Number.isInteger(req.body?.feeBps) ||
+    req.body.feeBps < 0 ||
+    req.body.feeBps > 1000
+  )
     errors.push('feeBps must be an integer 0-1000');
   if (errors.length) return fail(res, 400, 'Validation failed', errors);
 

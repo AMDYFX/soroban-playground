@@ -61,10 +61,7 @@ router.get(
     const start = Math.max(0, Number.parseInt(req.query.start || '0', 10));
     const end = Math.max(
       start,
-      Math.min(
-        999,
-        Number.parseInt(req.query.end || '49', 10)
-      )
+      Math.min(999, Number.parseInt(req.query.end || '49', 10))
     );
     const jobs = await getDlqJobs(req.params.queueName, { start, end });
     return res.json({
@@ -85,10 +82,7 @@ router.post(
   requireRole('admin'),
   asyncHandler(async (req, res) => {
     validateQueueName(req.params.queueName);
-    const result = await replayDlqJob(
-      req.params.queueName,
-      req.params.jobId
-    );
+    const result = await replayDlqJob(req.params.queueName, req.params.jobId);
     return res.json({ success: true, replayed: result });
   })
 );
@@ -105,12 +99,13 @@ router.post(
   requireRole('admin'),
   asyncHandler(async (req, res) => {
     validateQueueName(req.params.queueName);
-    const limit = Math.min(
-      500,
-      Number.parseInt(req.body?.limit || '50', 10)
-    );
+    const limit = Math.min(500, Number.parseInt(req.body?.limit || '50', 10));
     const results = await replayAllDlqJobs(req.params.queueName, limit);
-    return res.json({ success: true, replayed: results, count: results.length });
+    return res.json({
+      success: true,
+      replayed: results,
+      count: results.length,
+    });
   })
 );
 
@@ -123,10 +118,7 @@ router.delete(
   requireRole('admin'),
   asyncHandler(async (req, res) => {
     validateQueueName(req.params.queueName);
-    const result = await deleteDlqJob(
-      req.params.queueName,
-      req.params.jobId
-    );
+    const result = await deleteDlqJob(req.params.queueName, req.params.jobId);
     return res.json({ success: true, ...result });
   })
 );

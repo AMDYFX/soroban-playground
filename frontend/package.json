@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node ../node_modules/jest/bin/jest.js --runInBand",
-    "test:hooks": "jest src/__tests__/hooks --no-coverage"
+    "test:hooks": "jest src/__tests__/hooks --no-coverage",
+    "test:theme": "node ../node_modules/jest/bin/jest.js --runInBand src/__tests__/theme src/__tests__/components/ThemeSwitcher.test.tsx"
   },
   "dependencies": {
     "@apollo/client": "^4.1.9",

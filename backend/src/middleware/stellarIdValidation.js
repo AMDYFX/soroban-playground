@@ -30,12 +30,24 @@ export function stellarIdValidation(req, res, next) {
       const childPath = path ? `${path}.${key}` : key;
       if (typeof value === 'string') {
         if (/contract/i.test(key) && value && !isContractId(value)) {
-          issues.push({ path: childPath, message: 'Invalid Stellar contract ID (expected C + 55 base32 chars)' });
+          issues.push({
+            path: childPath,
+            message:
+              'Invalid Stellar contract ID (expected C + 55 base32 chars)',
+          });
         }
-        if (/(^|_)(address|public_?key|account|from|to|user)/i.test(key) && value.length > 20 && !isPublicKey(value) && !isContractId(value)) {
+        if (
+          /(^|_)(address|public_?key|account|from|to|user)/i.test(key) &&
+          value.length > 20 &&
+          !isPublicKey(value) &&
+          !isContractId(value)
+        ) {
           // Only flag values that look like Stellar keys (start with G/C) but fail the regex.
           if (/^[GC]/.test(value)) {
-            issues.push({ path: childPath, message: 'Invalid Stellar public key or contract ID' });
+            issues.push({
+              path: childPath,
+              message: 'Invalid Stellar public key or contract ID',
+            });
           }
         }
       } else if (value && typeof value === 'object') {

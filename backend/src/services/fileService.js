@@ -126,7 +126,12 @@ export async function deleteWorkspaceFile(projectId, filePath) {
  * Used by the dynamic tree explorer to render folders and leaves.
  */
 export function buildWorkspaceTree(files) {
-  const root = { name: WORKSPACE_ROOT, path: '', type: 'directory', children: [] };
+  const root = {
+    name: WORKSPACE_ROOT,
+    path: '',
+    type: 'directory',
+    children: [],
+  };
   const dirs = new Map([['', root]]);
   for (const file of files ?? []) {
     const path = normalizePath(file.path);
@@ -137,7 +142,12 @@ export function buildWorkspaceTree(files) {
       const segment = segments[i];
       const currentPath = parentPath ? `${parentPath}/${segment}` : segment;
       if (!dirs.has(currentPath)) {
-        const dir = { name: segment, path: currentPath, type: 'directory', children: [] };
+        const dir = {
+          name: segment,
+          path: currentPath,
+          type: 'directory',
+          children: [],
+        };
         dirs.set(currentPath, dir);
         dirs.get(parentPath).children.push(dir);
       }

@@ -261,7 +261,8 @@ export async function issueJwt(req, res, next) {
  */
 export async function requireNonce(req, res, next) {
   const nonce = req.headers['x-request-nonce'];
-  const publicKey = req.body?.address || req.body?.publicKey || req.query?.address;
+  const publicKey =
+    req.body?.address || req.body?.publicKey || req.query?.address;
 
   if (!nonce) {
     return res
@@ -277,7 +278,9 @@ export async function requireNonce(req, res, next) {
     req.nonceVerified = true;
     return next();
   } catch (err) {
-    return res.status(401).json({ error: `Nonce validation failed: ${err.message}` });
+    return res
+      .status(401)
+      .json({ error: `Nonce validation failed: ${err.message}` });
   }
 }
 

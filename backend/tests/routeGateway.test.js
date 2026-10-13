@@ -18,32 +18,60 @@ jest.mock('../src/routes/favorites.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/workspace.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/search.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/projects.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/v1/compile.js', () => require('./_helpers/stubRouter'));
+jest.mock('../src/routes/v1/compile.js', () =>
+  require('./_helpers/stubRouter')
+);
 jest.mock('../src/routes/v1/deploy.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/v1/invoke.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/v1/identity.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/v1/simulate.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/v2/compile.js', () => require('./_helpers/stubRouter'));
+jest.mock('../src/routes/v1/identity.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/v1/simulate.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/v2/compile.js', () =>
+  require('./_helpers/stubRouter')
+);
 jest.mock('../src/routes/v2/deploy.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/v2/invoke.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/v2/identity.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/v2/lottery.js', () => require('./_helpers/stubRouter'));
+jest.mock('../src/routes/v2/identity.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/v2/lottery.js', () =>
+  require('./_helpers/stubRouter')
+);
 jest.mock('../src/routes/events.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/patents.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/tokenBurn.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/oracle.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/verification.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/bugBountyRoutes.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/musicLicensingRoutes.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/sports.routes.js', () => require('./_helpers/stubRouter'));
+jest.mock('../src/routes/verification.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/bugBountyRoutes.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/musicLicensingRoutes.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/sports.routes.js', () =>
+  require('./_helpers/stubRouter')
+);
 jest.mock('../src/routes/escrow.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/nftAmm.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/lending.js', () => require('./_helpers/stubRouter'));
 jest.mock('../src/routes/social.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/pauseToggle.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/tokenGatedAccess.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/priceAggregator.js', () => require('./_helpers/stubRouter'));
-jest.mock('../src/routes/tokenizedReit.js', () => require('./_helpers/stubRouter'));
+jest.mock('../src/routes/pauseToggle.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/tokenGatedAccess.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/priceAggregator.js', () =>
+  require('./_helpers/stubRouter')
+);
+jest.mock('../src/routes/tokenizedReit.js', () =>
+  require('./_helpers/stubRouter')
+);
 jest.mock('../src/routes/readinessRules.routes.js', () => {
   const expressMod = require('express');
   const { computeReadinessStatus } = require('../src/routes/readinessRules.js');
@@ -53,7 +81,10 @@ jest.mock('../src/routes/readinessRules.routes.js', () => {
     res.status(result.httpStatus).json({ success: true, data: result });
   });
   router.get('/rules', (_req, res) => {
-    res.json({ success: true, data: { unhealthyWhen: 'any critical dependency status !== healthy' } });
+    res.json({
+      success: true,
+      data: { unhealthyWhen: 'any critical dependency status !== healthy' },
+    });
   });
   return { __esModule: true, default: router };
 });
@@ -92,7 +123,9 @@ describe('route gateway (#1491)', () => {
     app.use(express.json({ limit: '1mb' }));
     app.use('/api', apiRouter);
     app.use((err, _req, res, _next) => {
-      res.status(err.status || 500).json({ success: false, error: { message: err.message } });
+      res
+        .status(err.status || 500)
+        .json({ success: false, error: { message: err.message } });
     });
   });
 
@@ -102,13 +135,18 @@ describe('route gateway (#1491)', () => {
       expect(apiSource).toContain(`'${mountPath}'`);
     });
 
-    it.each(MUTATING_PREFIXES)('applies mutating rate limiter on %s', (prefix) => {
-      const mountPath = prefix.replace('/api', '');
-      const line = apiSource.split('\n').find((l) => l.includes(`use('${mountPath}'`));
-      expect(line).toBeDefined();
-      expect(line).toMatch(/stellarIdValidation/);
-      expect(line).toMatch(/mutatingRouteLimiter/);
-    });
+    it.each(MUTATING_PREFIXES)(
+      'applies mutating rate limiter on %s',
+      (prefix) => {
+        const mountPath = prefix.replace('/api', '');
+        const line = apiSource
+          .split('\n')
+          .find((l) => l.includes(`use('${mountPath}'`));
+        expect(line).toBeDefined();
+        expect(line).toMatch(/stellarIdValidation/);
+        expect(line).toMatch(/mutatingRouteLimiter/);
+      }
+    );
   });
 
   describe('mounted responses', () => {
@@ -138,7 +176,10 @@ describe('route gateway (#1491)', () => {
     it('returns ready when critical deps are healthy', async () => {
       const res = await request(app)
         .post('/api/readiness')
-        .send({ postgres: { status: 'healthy' }, redis: { status: 'healthy' } });
+        .send({
+          postgres: { status: 'healthy' },
+          redis: { status: 'healthy' },
+        });
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('ready');
     });
@@ -166,7 +207,9 @@ describe('route gateway (#1491)', () => {
 });
 
 describe('stellarIdValidation middleware (#1491)', () => {
-  const { stellarIdValidation } = require('../src/middleware/stellarIdValidation.js');
+  const {
+    stellarIdValidation,
+  } = require('../src/middleware/stellarIdValidation.js');
 
   function run(body, query = {}, params = {}) {
     return new Promise((resolve) => {
@@ -205,7 +248,11 @@ describe('stellarIdValidation middleware (#1491)', () => {
   });
 
   it('strips prototype pollution keys from bodies', async () => {
-    const req = { body: JSON.parse('{"__proto__":{"polluted":true},"ok":1}'), query: {}, params: {} };
+    const req = {
+      body: JSON.parse('{"__proto__":{"polluted":true},"ok":1}'),
+      query: {},
+      params: {},
+    };
     const res = {
       status(code) {
         this.statusCode = code;

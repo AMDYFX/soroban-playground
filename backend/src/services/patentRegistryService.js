@@ -66,8 +66,10 @@ class PatentRegistryService {
         verifiedCount: patents.filter((p) => p.status === 'Verified').length,
         licenseCount: this.licenses.length,
         activeOffers: this.licenses.filter((l) => l.status === 'Open').length,
-        acceptedLicenses: this.licenses.filter((l) => l.status === 'Accepted').length,
-        disputedLicenses: this.licenses.filter((l) => l.status === 'Disputed').length,
+        acceptedLicenses: this.licenses.filter((l) => l.status === 'Accepted')
+          .length,
+        disputedLicenses: this.licenses.filter((l) => l.status === 'Disputed')
+          .length,
         openDisputes: this.disputes.filter((d) => d.status === 'Open').length,
         totalPayments: this.licenses.reduce(
           (sum, l) => sum + (l.payment_amount || 0),
@@ -193,7 +195,11 @@ class PatentRegistryService {
       throw new Error('Invalid licensee');
     }
     this._validateString(terms, 'terms', MAX_TERMS_LENGTH);
-    if (typeof payment_amount !== 'number' || payment_amount < 0 || payment_amount > MAX_PAYMENT_AMOUNT) {
+    if (
+      typeof payment_amount !== 'number' ||
+      payment_amount < 0 ||
+      payment_amount > MAX_PAYMENT_AMOUNT
+    ) {
       throw new Error('Invalid payment amount');
     }
     if (!payment_currency) {
@@ -258,10 +264,17 @@ class PatentRegistryService {
     if (license.status !== 'Open') {
       throw new Error('License not open');
     }
-    if (typeof amount !== 'number' || amount <= 0 || amount > MAX_PAYMENT_AMOUNT) {
+    if (
+      typeof amount !== 'number' ||
+      amount <= 0 ||
+      amount > MAX_PAYMENT_AMOUNT
+    ) {
       throw new Error('Invalid escrow amount');
     }
-    if (amount !== license.payment_amount || currency !== license.payment_currency) {
+    if (
+      amount !== license.payment_amount ||
+      currency !== license.payment_currency
+    ) {
       throw new Error('Escrow terms mismatch');
     }
     const escrow = {

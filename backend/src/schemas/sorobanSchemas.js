@@ -22,6 +22,7 @@ const MAX_BATCH_SIZE = 20;
 
 function requiredString(field, message) {
   return z.string({
+    message: `${field} is required`,
     required_error: `${field} is required`,
     invalid_type_error: message || `${field} must be a string`,
   });
@@ -249,7 +250,6 @@ export const traceBodyV2 = z
     source_account: optional(sourceAccount('source_account')),
     frame: optional(traceFrameSchema),
   })
-  .refine(
-    (value) => value.tx_hash !== undefined || value.frame !== undefined,
-    { message: 'either tx_hash or frame must be provided' }
-  );
+  .refine((value) => value.tx_hash !== undefined || value.frame !== undefined, {
+    message: 'either tx_hash or frame must be provided',
+  });

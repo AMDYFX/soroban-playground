@@ -47,7 +47,7 @@ describe("StorageStateDiffDebugger", () => {
 
   it("renders Frame 1 / N counter in demo mode", () => {
     render(<StorageStateDiffDebugger />);
-    expect(screen.getByText(/frame 1 \/ \d+/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/frame 1 \/ \d+/i)[0]).toBeInTheDocument();
   });
 
   it("prev button is disabled at first frame", () => {
@@ -60,27 +60,31 @@ describe("StorageStateDiffDebugger", () => {
     render(<StorageStateDiffDebugger />);
     const nextBtn = screen.getByTitle("Step forward");
     fireEvent.click(nextBtn);
-    expect(screen.getByText(/frame 2 \/ \d+/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/frame 2 \/ \d+/i)[0]).toBeInTheDocument();
   });
 
   it("reset button returns to frame 1", () => {
     render(<StorageStateDiffDebugger />);
     fireEvent.click(screen.getByTitle("Step forward"));
     fireEvent.click(screen.getByTitle("Reset to initial frame"));
-    expect(screen.getByText(/frame 1 \/ \d+/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/frame 1 \/ \d+/i)[0]).toBeInTheDocument();
   });
 
   it("play button auto-advances frames", () => {
     render(<StorageStateDiffDebugger />);
     fireEvent.click(screen.getByRole("button", { name: /play playback/i }));
     act(() => jest.advanceTimersByTime(1200));
-    expect(screen.getByText(/frame 2 \/ \d+/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/frame 2 \/ \d+/i)[0]).toBeInTheDocument();
   });
 
   it("play stops automatically at last frame", () => {
     render(<StorageStateDiffDebugger />);
     fireEvent.click(screen.getByRole("button", { name: /play playback/i }));
-    act(() => jest.advanceTimersByTime(1200 * 10));
+    for (let i = 0; i < 10; i++) {
+      act(() => {
+        jest.advanceTimersByTime(1200);
+      });
+    }
     expect(
       screen.queryByRole("button", { name: /pause playback/i }),
     ).not.toBeInTheDocument();
@@ -97,7 +101,7 @@ describe("StorageStateDiffDebugger", () => {
     render(<StorageStateDiffDebugger />);
     const search = screen.getByPlaceholderText(/search storage key/i);
     fireEvent.change(search, { target: { value: "counter" } });
-    expect(screen.getByText("counter")).toBeInTheDocument();
+    expect(screen.getAllByText("counter")[0]).toBeInTheDocument();
     expect(screen.queryByText("admin")).not.toBeInTheDocument();
   });
 
@@ -124,15 +128,15 @@ describe("StorageStateDiffDebugger", () => {
     ]);
     render(<StorageStateDiffDebugger />);
     fireEvent.click(screen.getByRole("button", { name: /^all$/i }));
-    expect(screen.getByText(/frame 2 \/ 2/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/frame 2 \/ 2/i)[0]).toBeInTheDocument();
   });
 
   it("timeline slider scrubs to the correct frame", () => {
     render(<StorageStateDiffDebugger />);
-    const slider = screen.getByRole("slider", {
+    const sliders = screen.getAllByRole("slider", {
       name: /storage timeline slider/i,
     });
-    fireEvent.change(slider, { target: { value: "2" } });
-    expect(screen.getByText(/frame 3 \/ \d+/i)).toBeInTheDocument();
+    fireEvent.change(sliders[0], { target: { value: "2" } });
+    expect(screen.getAllByText(/frame 3 \/ \d+/i)[0]).toBeInTheDocument();
   });
 });

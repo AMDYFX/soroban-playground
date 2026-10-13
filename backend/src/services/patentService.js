@@ -22,7 +22,9 @@ const HEX_64_RE = /^[0-9a-fA-F]{64}$/;
 
 function assertAddress(value, field) {
   if (typeof value !== 'string' || !STELLAR_ADDRESS_RE.test(value)) {
-    throw new TypeError(`patentService: invalid Stellar address for "${field}"`);
+    throw new TypeError(
+      `patentService: invalid Stellar address for "${field}"`
+    );
   }
 }
 
@@ -35,7 +37,9 @@ function assertNonEmptyString(value, field) {
 function assertPositiveInt(value, field) {
   const n = typeof value === 'bigint' ? value : Number(value);
   if (!Number.isInteger(n) || n < 0) {
-    throw new TypeError(`patentService: "${field}" must be a non-negative integer`);
+    throw new TypeError(
+      `patentService: "${field}" must be a non-negative integer`
+    );
   }
 }
 
@@ -43,20 +47,27 @@ function assertFutureOrNull(value, field) {
   if (value === null || value === undefined) return;
   const n = Number(value);
   if (!Number.isFinite(n) || n < 0) {
-    throw new TypeError(`patentService: "${field}" must be a valid unix timestamp`);
+    throw new TypeError(
+      `patentService: "${field}" must be a valid unix timestamp`
+    );
   }
 }
 
 function assertContractConfigured() {
   if (!CONTRACT_ID) {
     throw new Error(
-      'patentService: PATENT_CONTRACT_ID is not configured for the current environment',
+      'patentService: PATENT_CONTRACT_ID is not configured for the current environment'
     );
   }
 }
 
 function normalizeInvokeResult(result) {
-  if (result && typeof result === 'object' && 'value' in result && result.value !== undefined) {
+  if (
+    result &&
+    typeof result === 'object' &&
+    'value' in result &&
+    result.value !== undefined
+  ) {
     return result.value;
   }
   return result;
@@ -172,17 +183,23 @@ export async function unpauseContract({ admin }) {
 
 export async function getPatent(patentId) {
   assertPositiveInt(patentId, 'patentId');
-  return normalizeInvokeResult(await invoke('get_patent', { patent_id: patentId }));
+  return normalizeInvokeResult(
+    await invoke('get_patent', { patent_id: patentId })
+  );
 }
 
 export async function getLicense(licenseId) {
   assertPositiveInt(licenseId, 'licenseId');
-  return normalizeInvokeResult(await invoke('get_license', { license_id: licenseId }));
+  return normalizeInvokeResult(
+    await invoke('get_license', { license_id: licenseId })
+  );
 }
 
 export async function getDispute(disputeId) {
   assertPositiveInt(disputeId, 'disputeId');
-  return normalizeInvokeResult(await invoke('get_dispute', { dispute_id: disputeId }));
+  return normalizeInvokeResult(
+    await invoke('get_dispute', { dispute_id: disputeId })
+  );
 }
 
 export async function getPatentCount() {

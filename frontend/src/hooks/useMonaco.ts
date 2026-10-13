@@ -3,16 +3,24 @@ import type { RefObject } from "react";
 import type * as monaco from "monaco-editor";
 import { scheduleEditorLoad } from "@/lib/editorLoadScheduler";
 import { configureMonacoWorkers } from "@/lib/monacoWorkers";
+import {
+  createMonacoScope,
+  type MonacoLifecycleScope,
+} from "@/lib/monacoLifecycle";
+import { monacoViewStates } from "@/lib/monacoViewState";
 import { getAppliedTheme } from "@/lib/theme/engine";
 import { MONACO_THEME_NAME, registerMonacoTheme } from "@/lib/theme/monaco";
 import { observeTheme } from "@/lib/theme/observe";
 import type { RustFormatDiagnostic } from "@/lib/rustfmtDiagnostics";
 import "monaco-editor/min/vs/style.css";
 
+let instanceCounter = 0;
+
 interface UseMonacoProps {
   language: string;
   value: string;
   onChange: (value: string) => void;
+  viewStateKey?: string;
   onFormat?: (source?: string) => void;
   formatDiagnostics?: RustFormatDiagnostic[];
 }
@@ -20,12 +28,14 @@ interface UseMonacoProps {
 interface UseMonacoResult {
   containerRef: RefObject<HTMLDivElement | null>;
   isEditorReady: boolean;
+  languageServiceStatus?: string | null;
 }
 
 export function useMonaco({
   language,
   value,
   onChange,
+  viewStateKey,
   onFormat,
   formatDiagnostics,
 }: UseMonacoProps): UseMonacoResult {
@@ -78,6 +88,7 @@ export function useMonaco({
   useEffect(() => {
     let disposed = false;
     let cancel: (() => void) | undefined;
+    let scope: MonacoLifecycleScope | null = null;
     let stopObservingTheme: (() => void) | undefined;
     let monacoAPI: typeof import("monaco-editor") | null = null;
 
@@ -99,6 +110,10 @@ export function useMonaco({
 
           // Register the design-token theme before the editor reads it.
           registerMonacoTheme(monacoAPI, getAppliedTheme() ?? "dark");
+
+          scope = createMonacoScope(
+            `${viewStateKey ?? "editor"}#${++instanceCounter}`,
+          );
 
           const editor = monacoAPI.editor.create(containerRef.current, {
             language,
@@ -128,7 +143,33 @@ export function useMonaco({
           }
 
           editorRef.current = editor;
-          modelRef.current = editor.getModel() ?? null;
+          const model = editor.getModel() ?? null;
+          modelRef.current = model;
+
+          if (model) {
+            scope.track({
+              kind: "model",
+              label: `${language} model`,
+              disposable: model,
+            });
+          }
+          scope.track({
+            kind: "editor",
+            label: "Soroban contract editor",
+            disposable: editor,
+          });
+
+          if (viewStateKey) {
+            const persistedViewState = monacoViewStates.restore(viewStateKey);
+            if (persistedViewState) {
+              try {
+                editor.restoreViewState(
+                  persistedViewState as monaco.editor.ICodeEditorViewState,
+                );
+              } catch {}
+            }
+          }
+
           setIsEditorReady(true);
 
           editor.addAction({
@@ -147,9 +188,36 @@ export function useMonaco({
             registerMonacoTheme(monacoAPI, mode);
             monacoAPI.editor.setTheme(MONACO_THEME_NAME);
           });
+          scope.track({
+            kind: "theme",
+            label: "monaco theme observer",
+            teardown: () => {
+              if (stopObservingTheme) {
+                stopObservingTheme();
+                stopObservingTheme = undefined;
+              }
+            },
+          });
 
-          const worker = new Worker(new URL("../workers/rustAnalyzer.worker.ts", import.meta.url));
+          const worker = new Worker(new URL("../workers/rust-analyzer.worker.ts", import.meta.url));
           workerRef.current = worker;
+          scope.track({
+            kind: "worker",
+            label: "rust analyzer worker",
+            teardown: () => worker.terminate(),
+          });
+
+          if (model) {
+            scope.track({
+              kind: "marker",
+              label: `rustAnalyzer markers (${model.uri.toString()})`,
+              teardown: () => {
+                try {
+                  monacoAPI?.editor.setModelMarkers(model, "rustAnalyzer", []);
+                } catch {}
+              },
+            });
+          }
 
           worker.onmessage = (event: MessageEvent) => {
             const { uri, diagnostics } = event.data;
@@ -178,7 +246,7 @@ export function useMonaco({
             );
           };
 
-          editor.onDidChangeModelContent(() => {
+          const contentListener = editor.onDidChangeModelContent(() => {
             if (modelRef.current) {
               monacoAPI!.editor.setModelMarkers(modelRef.current, "rustfmt", []);
             }
@@ -191,6 +259,13 @@ export function useMonaco({
               });
             }
           });
+          if (contentListener) {
+            scope.track({
+              kind: "listener",
+              label: "onDidChangeModelContent",
+              disposable: contentListener,
+            });
+          }
 
           if (modelRef.current) {
             workerRef.current.postMessage({
@@ -209,23 +284,42 @@ export function useMonaco({
     return () => {
       disposed = true;
       if (cancel) cancel();
-      if (stopObservingTheme) {
-        stopObservingTheme();
-        stopObservingTheme = undefined;
+
+      if (viewStateKey && editorRef.current) {
+        try {
+          const snapshot = editorRef.current.saveViewState();
+          if (snapshot) {
+            monacoViewStates.save(viewStateKey, snapshot);
+          }
+        } catch {}
       }
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
+
+      if (scope) {
+        scope.dispose();
+        scope = null;
+      } else {
+        if (stopObservingTheme) {
+          stopObservingTheme();
+          stopObservingTheme = undefined;
+        }
+        if (workerRef.current) {
+          workerRef.current.terminate();
+          workerRef.current = null;
+        }
+        if (editorRef.current) {
+          editorRef.current.dispose();
+          editorRef.current = null;
+        }
+        if (modelRef.current) {
+          modelRef.current.dispose();
+          modelRef.current = null;
+        }
       }
-      if (editorRef.current) {
-        editorRef.current.dispose();
-        editorRef.current = null;
-      }
+
+      editorRef.current = null;
+      modelRef.current = null;
+      workerRef.current = null;
       monacoRef.current = null;
-      if (modelRef.current) {
-        modelRef.current.dispose();
-        modelRef.current = null;
-      }
       setIsEditorReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

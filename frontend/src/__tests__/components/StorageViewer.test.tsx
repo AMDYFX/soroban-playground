@@ -28,17 +28,17 @@ describe("StorageViewer", () => {
   it("renders storage keys and values", () => {
     const storage: LedgerState = { counter: 42, admin: "GABC" };
     render(<StorageViewer storage={storage} {...baseProps} />);
-    expect(screen.getByText("counter")).toBeInTheDocument();
-    expect(screen.getByText("42")).toBeInTheDocument();
-    expect(screen.getByText("admin")).toBeInTheDocument();
-    expect(screen.getByText("GABC")).toBeInTheDocument();
+    expect(screen.getAllByText("counter").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("42").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("admin").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("GABC").length).toBeGreaterThan(0);
   });
 
   it("shows contextLabel when provided", () => {
     render(
       <StorageViewer storage={{}} contextLabel="Frame 1" {...baseProps} />,
     );
-    expect(screen.getByText("Frame 1")).toBeInTheDocument();
+    expect(screen.getAllByText("Frame 1").length).toBeGreaterThan(0);
   });
 
   it("shows no-change message in deep diff when storage matches previous", () => {

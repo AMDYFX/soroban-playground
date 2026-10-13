@@ -1,21 +1,23 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, contracterror,
-    symbol_short, Address, Env, Map,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map,
 };
 
-mod tick_math;
-mod position;
 mod bitmap;
-mod swap_math;
 mod fee_math;
+mod position;
+mod swap_math;
+mod tick_math;
 
-pub use tick_math::{get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, MAX_TICK, MIN_TICK, Q96, MIN_SQRT_RATIO, MAX_SQRT_RATIO};
-pub use position::{Position, PositionKey, PositionInfo};
 pub use bitmap::TickBitmap;
-pub use swap_math::{compute_swap_step, SwapStepResult};
 pub use fee_math::{compute_fee_growth, FeeGrowthGlobal};
+pub use position::{Position, PositionInfo, PositionKey};
+pub use swap_math::{compute_swap_step, SwapStepResult};
+pub use tick_math::{
+    get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, MAX_SQRT_RATIO, MAX_TICK, MIN_SQRT_RATIO,
+    MIN_TICK, Q96,
+};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -151,15 +153,33 @@ impl ConcentratedLiquidity {
 
         let bitmap = TickBitmap::new(tick_spacing);
 
-        env.storage().instance().set(&symbol_short!("config"), &config);
-        env.storage().instance().set(&symbol_short!("state"), &state);
-        env.storage().instance().set(&symbol_short!("bitmap"), &bitmap);
-        env.storage().instance().set(&symbol_short!("positions"), &Map::<PositionKey, Position>::new(&env));
-        env.storage().instance().set(&symbol_short!("ticks"), &Map::<i32, TickInfo>::new(&env));
+        env.storage()
+            .instance()
+            .set(&symbol_short!("config"), &config);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("state"), &state);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("bitmap"), &bitmap);
+        env.storage().instance().set(
+            &symbol_short!("positions"),
+            &Map::<PositionKey, Position>::new(&env),
+        );
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ticks"), &Map::<i32, TickInfo>::new(&env));
 
         env.events().publish(
             (symbol_short!("init"),),
-            (admin, token_a, token_b, fee_bps, tick_spacing, sqrt_price_x96),
+            (
+                admin,
+                token_a,
+                token_b,
+                fee_bps,
+                tick_spacing,
+                sqrt_price_x96,
+            ),
         );
 
         Ok(())
@@ -175,11 +195,31 @@ impl ConcentratedLiquidity {
         amount_0_min: u128,
         amount_1_min: u128,
     ) -> Result<PositionKey, Error> {
-        let config: PoolConfig = env.storage().instance().get(&symbol_short!("config")).ok_or(Error::NotInitialized)?;
-        let mut state: PoolState = env.storage().instance().get(&symbol_short!("state")).ok_or(Error::NotInitialized)?;
-        let mut bitmap: TickBitmap = env.storage().instance().get(&symbol_short!("bitmap")).ok_or(Error::NotInitialized)?;
-        let mut positions: Map<PositionKey, Position> = env.storage().instance().get(&symbol_short!("positions")).ok_or(Error::NotInitialized)?;
-        let mut ticks: Map<i32, TickInfo> = env.storage().instance().get(&symbol_short!("ticks")).ok_or(Error::NotInitialized)?;
+        let config: PoolConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("config"))
+            .ok_or(Error::NotInitialized)?;
+        let mut state: PoolState = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("state"))
+            .ok_or(Error::NotInitialized)?;
+        let mut bitmap: TickBitmap = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("bitmap"))
+            .ok_or(Error::NotInitialized)?;
+        let mut positions: Map<PositionKey, Position> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("positions"))
+            .ok_or(Error::NotInitialized)?;
+        let mut ticks: Map<i32, TickInfo> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ticks"))
+            .ok_or(Error::NotInitialized)?;
 
         owner.require_auth();
 
@@ -207,19 +247,19 @@ impl ConcentratedLiquidity {
             return Err(Error::ZeroLiquidity);
         }
 
-        let (amount_0, amount_1) = position::calculate_amounts(
-            state.sqrt_price_x96,
-            tick_lower,
-            tick_upper,
-            liquidity,
-        )?;
+        let (amount_0, amount_1) =
+            position::calculate_amounts(state.sqrt_price_x96, tick_lower, tick_upper, liquidity)?;
 
         if amount_0 < amount_0_min || amount_1 < amount_1_min {
             return Err(Error::SlippageExceeded);
         }
 
-        let position_key = PositionKey { owner: owner.clone(), tick_lower, tick_upper };
-        
+        let position_key = PositionKey {
+            owner: owner.clone(),
+            tick_lower,
+            tick_upper,
+        };
+
         let mut position = positions.get(position_key.clone()).unwrap_or(Position {
             liquidity: 0,
             fee_growth_inside_0_last_x128: 0,
@@ -228,7 +268,10 @@ impl ConcentratedLiquidity {
             tokens_owed_1: 0,
         });
 
-        position.liquidity = position.liquidity.checked_add(liquidity).ok_or(Error::Overflow)?;
+        position.liquidity = position
+            .liquidity
+            .checked_add(liquidity)
+            .ok_or(Error::Overflow)?;
         position.fee_growth_inside_0_last_x128 = state.fee_growth_global_0_x128;
         position.fee_growth_inside_1_last_x128 = state.fee_growth_global_1_x128;
 
@@ -237,16 +280,44 @@ impl ConcentratedLiquidity {
         bitmap.set_tick_initialized(tick_lower, true)?;
         bitmap.set_tick_initialized(tick_upper, true)?;
 
-        update_tick(&mut ticks, tick_lower, liquidity, true, state.fee_growth_global_0_x128, state.fee_growth_global_1_x128)?;
-        update_tick(&mut ticks, tick_upper, liquidity, false, state.fee_growth_global_0_x128, state.fee_growth_global_1_x128)?;
+        update_tick(
+            &mut ticks,
+            tick_lower,
+            liquidity,
+            true,
+            state.fee_growth_global_0_x128,
+            state.fee_growth_global_1_x128,
+        )?;
+        update_tick(
+            &mut ticks,
+            tick_upper,
+            liquidity,
+            false,
+            state.fee_growth_global_0_x128,
+            state.fee_growth_global_1_x128,
+        )?;
 
-        state.liquidity = state.liquidity.checked_add(liquidity).ok_or(Error::Overflow)?;
-        state.liquidity_gross = state.liquidity_gross.checked_add(liquidity).ok_or(Error::Overflow)?;
+        state.liquidity = state
+            .liquidity
+            .checked_add(liquidity)
+            .ok_or(Error::Overflow)?;
+        state.liquidity_gross = state
+            .liquidity_gross
+            .checked_add(liquidity)
+            .ok_or(Error::Overflow)?;
 
-        env.storage().instance().set(&symbol_short!("state"), &state);
-        env.storage().instance().set(&symbol_short!("bitmap"), &bitmap);
-        env.storage().instance().set(&symbol_short!("positions"), &positions);
-        env.storage().instance().set(&symbol_short!("ticks"), &ticks);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("state"), &state);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("bitmap"), &bitmap);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("positions"), &positions);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ticks"), &ticks);
 
         env.events().publish(
             (symbol_short!("mint"),),
@@ -263,41 +334,95 @@ impl ConcentratedLiquidity {
         tick_upper: i32,
         liquidity: u128,
     ) -> Result<(u128, u128), Error> {
-        let config: PoolConfig = env.storage().instance().get(&symbol_short!("config")).ok_or(Error::NotInitialized)?;
-        let mut state: PoolState = env.storage().instance().get(&symbol_short!("state")).ok_or(Error::NotInitialized)?;
-        let mut bitmap: TickBitmap = env.storage().instance().get(&symbol_short!("bitmap")).ok_or(Error::NotInitialized)?;
-        let mut positions: Map<PositionKey, Position> = env.storage().instance().get(&symbol_short!("positions")).ok_or(Error::NotInitialized)?;
-        let mut ticks: Map<i32, TickInfo> = env.storage().instance().get(&symbol_short!("ticks")).ok_or(Error::NotInitialized)?;
+        let config: PoolConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("config"))
+            .ok_or(Error::NotInitialized)?;
+        let mut state: PoolState = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("state"))
+            .ok_or(Error::NotInitialized)?;
+        let mut bitmap: TickBitmap = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("bitmap"))
+            .ok_or(Error::NotInitialized)?;
+        let mut positions: Map<PositionKey, Position> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("positions"))
+            .ok_or(Error::NotInitialized)?;
+        let mut ticks: Map<i32, TickInfo> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ticks"))
+            .ok_or(Error::NotInitialized)?;
 
         owner.require_auth();
 
-        let position_key = PositionKey { owner: owner.clone(), tick_lower, tick_upper };
-        let mut position = positions.get(position_key.clone()).ok_or(Error::PositionNotFound)?;
+        let position_key = PositionKey {
+            owner: owner.clone(),
+            tick_lower,
+            tick_upper,
+        };
+        let mut position = positions
+            .get(position_key.clone())
+            .ok_or(Error::PositionNotFound)?;
 
         if position.liquidity < liquidity {
             return Err(Error::InsufficientLiquidity);
         }
 
-        let (amount_0, amount_1) = position::calculate_amounts(
-            state.sqrt_price_x96,
-            tick_lower,
-            tick_upper,
-            liquidity,
-        )?;
+        let (amount_0, amount_1) =
+            position::calculate_amounts(state.sqrt_price_x96, tick_lower, tick_upper, liquidity)?;
 
-        position.liquidity = position.liquidity.checked_sub(liquidity).ok_or(Error::Underflow)?;
-        let new_liquidity = position.liquidity.checked_sub(liquidity).ok_or(Error::Underflow)?;
+        position.liquidity = position
+            .liquidity
+            .checked_sub(liquidity)
+            .ok_or(Error::Underflow)?;
+        let new_liquidity = position
+            .liquidity
+            .checked_sub(liquidity)
+            .ok_or(Error::Underflow)?;
         position.liquidity = new_liquidity;
-        position.tokens_owed_0 = position.tokens_owed_0.checked_add(amount_0).ok_or(Error::Overflow)?;
-        position.tokens_owed_1 = position.tokens_owed_1.checked_add(amount_1).ok_or(Error::Overflow)?;
+        position.tokens_owed_0 = position
+            .tokens_owed_0
+            .checked_add(amount_0)
+            .ok_or(Error::Overflow)?;
+        position.tokens_owed_1 = position
+            .tokens_owed_1
+            .checked_add(amount_1)
+            .ok_or(Error::Overflow)?;
 
         positions.set(position_key.clone(), position);
 
-        update_tick(&mut ticks, tick_lower, liquidity, false, state.fee_growth_global_0_x128, state.fee_growth_global_1_x128)?;
-        update_tick(&mut ticks, tick_upper, liquidity, true, state.fee_growth_global_0_x128, state.fee_growth_global_1_x128)?;
+        update_tick(
+            &mut ticks,
+            tick_lower,
+            liquidity,
+            false,
+            state.fee_growth_global_0_x128,
+            state.fee_growth_global_1_x128,
+        )?;
+        update_tick(
+            &mut ticks,
+            tick_upper,
+            liquidity,
+            true,
+            state.fee_growth_global_0_x128,
+            state.fee_growth_global_1_x128,
+        )?;
 
-        state.liquidity = state.liquidity.checked_sub(liquidity).ok_or(Error::Underflow)?;
-        state.liquidity_gross = state.liquidity_gross.checked_sub(liquidity).ok_or(Error::Underflow)?;
+        state.liquidity = state
+            .liquidity
+            .checked_sub(liquidity)
+            .ok_or(Error::Underflow)?;
+        state.liquidity_gross = state
+            .liquidity_gross
+            .checked_sub(liquidity)
+            .ok_or(Error::Underflow)?;
 
         if new_liquidity == 0 {
             positions.remove(position_key);
@@ -309,10 +434,18 @@ impl ConcentratedLiquidity {
             }
         }
 
-        env.storage().instance().set(&symbol_short!("state"), &state);
-        env.storage().instance().set(&symbol_short!("bitmap"), &bitmap);
-        env.storage().instance().set(&symbol_short!("positions"), &positions);
-        env.storage().instance().set(&symbol_short!("ticks"), &ticks);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("state"), &state);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("bitmap"), &bitmap);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("positions"), &positions);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ticks"), &ticks);
 
         env.events().publish(
             (symbol_short!("burn"),),
@@ -328,13 +461,27 @@ impl ConcentratedLiquidity {
         tick_lower: i32,
         tick_upper: i32,
     ) -> Result<(u128, u128), Error> {
-        let mut positions: Map<PositionKey, Position> = env.storage().instance().get(&symbol_short!("positions")).ok_or(Error::NotInitialized)?;
-        let state: PoolState = env.storage().instance().get(&symbol_short!("state")).ok_or(Error::NotInitialized)?;
+        let mut positions: Map<PositionKey, Position> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("positions"))
+            .ok_or(Error::NotInitialized)?;
+        let state: PoolState = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("state"))
+            .ok_or(Error::NotInitialized)?;
 
         owner.require_auth();
 
-        let position_key = PositionKey { owner: owner.clone(), tick_lower, tick_upper };
-        let mut position = positions.get(position_key.clone()).ok_or(Error::PositionNotFound)?;
+        let position_key = PositionKey {
+            owner: owner.clone(),
+            tick_lower,
+            tick_upper,
+        };
+        let mut position = positions
+            .get(position_key.clone())
+            .ok_or(Error::PositionNotFound)?;
 
         let uncollected_0 = position.tokens_owed_0;
         let uncollected_1 = position.tokens_owed_1;
@@ -344,7 +491,9 @@ impl ConcentratedLiquidity {
 
         positions.set(position_key.clone(), position);
 
-        env.storage().instance().set(&symbol_short!("positions"), &positions);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("positions"), &positions);
 
         env.events().publish(
             (symbol_short!("collect"),),
@@ -362,10 +511,26 @@ impl ConcentratedLiquidity {
         amount_out_min: u128,
         sqrt_price_limit_x96: u128,
     ) -> Result<SwapResult, Error> {
-        let config: PoolConfig = env.storage().instance().get(&symbol_short!("config")).ok_or(Error::NotInitialized)?;
-        let mut state: PoolState = env.storage().instance().get(&symbol_short!("state")).ok_or(Error::NotInitialized)?;
-        let bitmap: TickBitmap = env.storage().instance().get(&symbol_short!("bitmap")).ok_or(Error::NotInitialized)?;
-        let mut ticks: Map<i32, TickInfo> = env.storage().instance().get(&symbol_short!("ticks")).ok_or(Error::NotInitialized)?;
+        let config: PoolConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("config"))
+            .ok_or(Error::NotInitialized)?;
+        let mut state: PoolState = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("state"))
+            .ok_or(Error::NotInitialized)?;
+        let bitmap: TickBitmap = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("bitmap"))
+            .ok_or(Error::NotInitialized)?;
+        let mut ticks: Map<i32, TickInfo> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ticks"))
+            .ok_or(Error::NotInitialized)?;
 
         trader.require_auth();
 
@@ -400,12 +565,23 @@ impl ConcentratedLiquidity {
             fee_bps,
         )?;
 
-        env.storage().instance().set(&symbol_short!("state"), &state);
-        env.storage().instance().set(&symbol_short!("ticks"), &ticks);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("state"), &state);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("ticks"), &ticks);
 
         env.events().publish(
             (symbol_short!("swap"),),
-            (trader, token_in, amount_in, result.amount_0, result.amount_1, result.fee_amount),
+            (
+                trader,
+                token_in,
+                amount_in,
+                result.amount_0,
+                result.amount_1,
+                result.fee_amount,
+            ),
         );
 
         Ok(result)
@@ -417,10 +593,22 @@ impl ConcentratedLiquidity {
         tick_lower: i32,
         tick_upper: i32,
     ) -> Result<PositionInfo, Error> {
-        let positions: Map<PositionKey, Position> = env.storage().instance().get(&symbol_short!("positions")).ok_or(Error::NotInitialized)?;
-        let state: PoolState = env.storage().instance().get(&symbol_short!("state")).ok_or(Error::NotInitialized)?;
+        let positions: Map<PositionKey, Position> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("positions"))
+            .ok_or(Error::NotInitialized)?;
+        let state: PoolState = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("state"))
+            .ok_or(Error::NotInitialized)?;
 
-        let position_key = PositionKey { owner, tick_lower, tick_upper };
+        let position_key = PositionKey {
+            owner,
+            tick_lower,
+            tick_upper,
+        };
         let position = positions.get(position_key).ok_or(Error::PositionNotFound)?;
 
         let fees = calculate_uncollected_fees(
@@ -444,25 +632,35 @@ impl ConcentratedLiquidity {
     }
 
     pub fn get_pool_state(env: Env) -> Result<PoolState, Error> {
-        env.storage().instance().get(&symbol_short!("state")).ok_or(Error::NotInitialized)
+        env.storage()
+            .instance()
+            .get(&symbol_short!("state"))
+            .ok_or(Error::NotInitialized)
     }
 
     pub fn get_config(env: Env) -> Result<PoolConfig, Error> {
-        env.storage().instance().get(&symbol_short!("config")).ok_or(Error::NotInitialized)
+        env.storage()
+            .instance()
+            .get(&symbol_short!("config"))
+            .ok_or(Error::NotInitialized)
     }
 
     pub fn get_tick_info(env: Env, tick: i32) -> Result<TickInfo, Error> {
-        let ticks: Map<i32, TickInfo> = env.storage().instance().get(&symbol_short!("ticks")).ok_or(Error::NotInitialized)?;
+        let ticks: Map<i32, TickInfo> = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("ticks"))
+            .ok_or(Error::NotInitialized)?;
         ticks.get(tick).ok_or(Error::TickNotInitialized)
     }
 
-    pub fn set_protocol_fee(
-        env: Env,
-        admin: Address,
-        protocol_fee_bps: u128,
-    ) -> Result<(), Error> {
-        let config: PoolConfig = env.storage().instance().get(&symbol_short!("config")).ok_or(Error::NotInitialized)?;
-        
+    pub fn set_protocol_fee(env: Env, admin: Address, protocol_fee_bps: u128) -> Result<(), Error> {
+        let config: PoolConfig = env
+            .storage()
+            .instance()
+            .get(&symbol_short!("config"))
+            .ok_or(Error::NotInitialized)?;
+
         admin.require_auth();
         if admin != config.admin {
             return Err(Error::Unauthorized);
@@ -472,7 +670,9 @@ impl ConcentratedLiquidity {
             return Err(Error::InvalidFee);
         }
 
-        env.storage().instance().set(&symbol_short!("proto_fee"), &protocol_fee_bps);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("proto_fee"), &protocol_fee_bps);
 
         Ok(())
     }
@@ -500,16 +700,19 @@ fn update_tick(
     tick_info.initialized = true;
 
     if is_lower {
-        tick_info.liquidity_net = tick_info.liquidity_net
+        tick_info.liquidity_net = tick_info
+            .liquidity_net
             .checked_add(liquidity_delta as i128)
             .ok_or(Error::Overflow)?;
     } else {
-        tick_info.liquidity_net = tick_info.liquidity_net
+        tick_info.liquidity_net = tick_info
+            .liquidity_net
             .checked_sub(liquidity_delta as i128)
             .ok_or(Error::Underflow)?;
     }
 
-    tick_info.liquidity_gross = tick_info.liquidity_gross
+    tick_info.liquidity_gross = tick_info
+        .liquidity_gross
         .checked_add(liquidity_delta)
         .ok_or(Error::Overflow)?;
 
@@ -541,7 +744,11 @@ fn calculate_uncollected_fees(
     fee_growth_global_1_x128: u128,
     env: &Env,
 ) -> Result<(u128, u128), Error> {
-    let ticks: Map<i32, TickInfo> = env.storage().instance().get(&symbol_short!("ticks")).ok_or(Error::NotInitialized)?;
+    let ticks: Map<i32, TickInfo> = env
+        .storage()
+        .instance()
+        .get(&symbol_short!("ticks"))
+        .ok_or(Error::NotInitialized)?;
 
     let tick_lower_info = ticks.get(tick_lower).ok_or(Error::TickNotInitialized)?;
     let tick_upper_info = ticks.get(tick_upper).ok_or(Error::TickNotInitialized)?;
@@ -551,7 +758,9 @@ fn calculate_uncollected_fees(
     let fee_growth_below_1 = tick_lower_info.fee_growth_outside_1_x128;
     let fee_growth_above_1 = tick_upper_info.fee_growth_outside_1_x128;
 
-    let fee_growth_inside_0 = if fee_growth_global_0_x128 >= fee_growth_below_0 && fee_growth_global_0_x128 >= fee_growth_above_0 {
+    let fee_growth_inside_0 = if fee_growth_global_0_x128 >= fee_growth_below_0
+        && fee_growth_global_0_x128 >= fee_growth_above_0
+    {
         fee_growth_global_0_x128 - fee_growth_below_0 - fee_growth_above_0
     } else if fee_growth_global_0_x128 >= fee_growth_below_0 {
         fee_growth_global_0_x128 - fee_growth_below_0
@@ -561,7 +770,9 @@ fn calculate_uncollected_fees(
         0
     };
 
-    let fee_growth_inside_1 = if fee_growth_global_1_x128 >= fee_growth_below_1 && fee_growth_global_1_x128 >= fee_growth_above_1 {
+    let fee_growth_inside_1 = if fee_growth_global_1_x128 >= fee_growth_below_1
+        && fee_growth_global_1_x128 >= fee_growth_above_1
+    {
         fee_growth_global_1_x128 - fee_growth_below_1 - fee_growth_above_1
     } else if fee_growth_global_1_x128 >= fee_growth_below_1 {
         fee_growth_global_1_x128 - fee_growth_below_1

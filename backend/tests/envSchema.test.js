@@ -115,9 +115,9 @@ describe('validateEnvSchema', () => {
       BACKUP_ENABLED: 'true',
       BACKUP_S3_BUCKET: 'my-bucket',
     });
-    expect(
-      result.errors.some((e) => e.includes('BACKUP_ENCRYPTION_KEY'))
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes('BACKUP_ENCRYPTION_KEY'))).toBe(
+      true
+    );
     expect(result.valid).toBe(false);
   });
 

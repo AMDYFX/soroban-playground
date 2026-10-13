@@ -137,7 +137,12 @@ async function readSnapshot(tenantId, walletAddress) {
     ),
     history: historyArray(parseJsonColumn(row.history, [])),
     workspace: normalizeWorkspace(parseJsonColumn(row.workspace, {})),
-    updatedAt: Date.parse(row.updated_at) || 0,
+    updatedAt:
+      typeof row.updated_at === 'number'
+        ? row.updated_at
+        : !isNaN(Number(row.updated_at))
+          ? Number(row.updated_at)
+          : Date.parse(row.updated_at) || 0,
     deviceId: typeof row.device_id === 'string' ? row.device_id : undefined,
     revision: Number.isInteger(row.revision) ? row.revision : 0,
   };
@@ -145,7 +150,12 @@ async function readSnapshot(tenantId, walletAddress) {
 
 async function writeSnapshot(tenantId, walletAddress, snapshot) {
   const db = getDatabase();
-  const updatedAt = new Date().toISOString();
+  const updatedAt =
+    typeof snapshot.updatedAt === 'number' &&
+    Number.isFinite(snapshot.updatedAt) &&
+    snapshot.updatedAt > 0
+      ? String(snapshot.updatedAt)
+      : new Date().toISOString();
   await db.run(
     `INSERT INTO workspace_snapshots
        (tenant_id, wallet_address, favorites, history, workspace, updated_at, device_id, revision)
@@ -169,7 +179,12 @@ async function writeSnapshot(tenantId, walletAddress, snapshot) {
     ]
   );
 
-  return { ...snapshot, updatedAt: Date.parse(updatedAt) || 0 };
+  return {
+    ...snapshot,
+    updatedAt: !isNaN(Number(updatedAt))
+      ? Number(updatedAt)
+      : Date.parse(updatedAt) || 0,
+  };
 }
 
 /** Union two favorite lists, preserving first-seen order. */
@@ -271,7 +286,9 @@ router.post(
     const merged = {
       favorites: mergeFavorites(current.favorites, incoming.favorites),
       history: mergeHistory(current.history, incoming.history),
-      workspace: mergeWorkspace(current.workspace, incoming.workspace),
+      workspace: prefersIncoming(current, incoming)
+        ? mergeWorkspace(current.workspace, incoming.workspace)
+        : current.workspace,
       updatedAt: Math.max(current.updatedAt, incoming.updatedAt),
       deviceId:
         prefersIncoming(current, incoming) && incoming.deviceId !== undefined

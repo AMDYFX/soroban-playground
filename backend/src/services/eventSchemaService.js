@@ -421,7 +421,7 @@ function createDefaultSchemas() {
       required: true,
       enum: ['pending', 'settled', 'failed'],
     },
-    memo { type: 'string', required: false },
+    memo: { type: 'string', required: false },
   };
 
   return [
@@ -608,7 +608,9 @@ class EventSchemaService {
 
   quarantineEvent(envelope, errors) {
     const item = {
-      id: envelope.id || `quarantine-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id:
+        envelope.id ||
+        `quarantine-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       eventType: envelope.eventType,
       schemaVersion: envelope.schemaVersion,
       errors,
@@ -642,7 +644,9 @@ class EventSchemaService {
 
   recordSchemaAlert(alert) {
     const entry = {
-      id: alert.id || `alert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id:
+        alert.id ||
+        `alert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type: alert.type || 'schema_drift',
       eventType: alert.eventType,
       severity: alert.severity || 'warning',
@@ -656,7 +660,10 @@ class EventSchemaService {
       this.alerts.pop();
     }
 
-    eventSchemaDetectionAlertsTotal.inc({ type: entry.type, severity: entry.severity });
+    eventSchemaDetectionAlertsTotal.inc({
+      type: entry.type,
+      severity: entry.severity,
+    });
     return entry;
   }
 

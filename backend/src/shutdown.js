@@ -50,9 +50,13 @@ export function setupGracefulShutdown({
     try {
       // 1. Stop accepting new HTTP/HTTPS connections
       if (server && typeof server.close === 'function') {
-        logger.info('[Shutdown] Closing HTTP server to stop accepting new requests...');
+        logger.info(
+          '[Shutdown] Closing HTTP server to stop accepting new requests...'
+        );
         await new Promise((resolve) => server.close(resolve));
-        logger.info('[Shutdown] HTTP server stopped accepting new connections.');
+        logger.info(
+          '[Shutdown] HTTP server stopped accepting new connections.'
+        );
       }
 
       // 2. Close active WebSocket connections cleanly
@@ -68,14 +72,18 @@ export function setupGracefulShutdown({
           }
         }
         await new Promise((resolve) => wss.close(resolve));
-        logger.info('[Shutdown] WebSocket connections terminated and server closed.');
+        logger.info(
+          '[Shutdown] WebSocket connections terminated and server closed.'
+        );
       }
 
       // 3. Drain and close BullMQ queues and workers
       logger.info('[Shutdown] Draining BullMQ queues and workers...');
       try {
         await shutdownQueues();
-        logger.info('[Shutdown] BullMQ queues successfully drained and closed.');
+        logger.info(
+          '[Shutdown] BullMQ queues successfully drained and closed.'
+        );
       } catch (err) {
         logger.error('[Shutdown] Error draining BullMQ queues:', err.message);
       }
@@ -127,4 +135,3 @@ export function setupGracefulShutdown({
 
   return { handleSignal };
 }
-

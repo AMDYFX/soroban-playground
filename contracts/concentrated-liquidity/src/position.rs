@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contracttype};
+use soroban_sdk::contracttype;
 
 use crate::tick_math::{get_sqrt_ratio_at_tick, Q96};
 use crate::Error;
@@ -50,7 +50,9 @@ pub fn calculate_liquidity(
     let sqrt_ratio_upper = get_sqrt_ratio_at_tick(tick_upper)?;
 
     if sqrt_price_x96 <= sqrt_ratio_lower {
-        let diff = sqrt_ratio_upper.checked_sub(sqrt_ratio_lower).ok_or(Error::Underflow)?;
+        let diff = sqrt_ratio_upper
+            .checked_sub(sqrt_ratio_lower)
+            .ok_or(Error::Underflow)?;
         let liquidity_0 = amount_0
             .checked_mul(sqrt_ratio_lower)
             .and_then(|v| v.checked_mul(sqrt_ratio_upper))
@@ -60,14 +62,18 @@ pub fn calculate_liquidity(
     }
 
     if sqrt_price_x96 < sqrt_ratio_upper {
-        let diff_0 = sqrt_ratio_upper.checked_sub(sqrt_price_x96).ok_or(Error::Underflow)?;
+        let diff_0 = sqrt_ratio_upper
+            .checked_sub(sqrt_price_x96)
+            .ok_or(Error::Underflow)?;
         let liquidity_0 = amount_0
             .checked_mul(sqrt_price_x96)
             .and_then(|v| v.checked_mul(sqrt_ratio_upper))
             .and_then(|v| v.checked_div(diff_0))
             .ok_or(Error::Overflow)?;
 
-        let diff_1 = sqrt_price_x96.checked_sub(sqrt_ratio_lower).ok_or(Error::Underflow)?;
+        let diff_1 = sqrt_price_x96
+            .checked_sub(sqrt_ratio_lower)
+            .ok_or(Error::Underflow)?;
         let liquidity_1 = amount_1
             .checked_mul(Q96)
             .and_then(|v| v.checked_div(diff_1))
@@ -76,7 +82,9 @@ pub fn calculate_liquidity(
         return Ok(liquidity_0.min(liquidity_1));
     }
 
-    let diff = sqrt_ratio_upper.checked_sub(sqrt_ratio_lower).ok_or(Error::Underflow)?;
+    let diff = sqrt_ratio_upper
+        .checked_sub(sqrt_ratio_lower)
+        .ok_or(Error::Underflow)?;
     let liquidity_1 = amount_1
         .checked_mul(Q96)
         .and_then(|v| v.checked_div(diff))
@@ -95,7 +103,9 @@ pub fn calculate_amounts(
     let sqrt_ratio_upper = get_sqrt_ratio_at_tick(tick_upper)?;
 
     let (amount_0, amount_1) = if sqrt_price_x96 <= sqrt_ratio_lower {
-        let diff = sqrt_ratio_upper.checked_sub(sqrt_ratio_lower).ok_or(Error::Underflow)?;
+        let diff = sqrt_ratio_upper
+            .checked_sub(sqrt_ratio_lower)
+            .ok_or(Error::Underflow)?;
         let amount_0 = liquidity
             .checked_mul(diff)
             .and_then(|v| v.checked_div(sqrt_ratio_lower))
@@ -104,7 +114,9 @@ pub fn calculate_amounts(
             .ok_or(Error::Overflow)?;
         (amount_0, 0)
     } else if sqrt_price_x96 < sqrt_ratio_upper {
-        let diff_0 = sqrt_ratio_upper.checked_sub(sqrt_price_x96).ok_or(Error::Underflow)?;
+        let diff_0 = sqrt_ratio_upper
+            .checked_sub(sqrt_price_x96)
+            .ok_or(Error::Underflow)?;
         let amount_0 = liquidity
             .checked_mul(diff_0)
             .and_then(|v| v.checked_div(sqrt_price_x96))
@@ -112,7 +124,9 @@ pub fn calculate_amounts(
             .and_then(|v| v.checked_mul(Q96))
             .ok_or(Error::Overflow)?;
 
-        let diff_1 = sqrt_price_x96.checked_sub(sqrt_ratio_lower).ok_or(Error::Underflow)?;
+        let diff_1 = sqrt_price_x96
+            .checked_sub(sqrt_ratio_lower)
+            .ok_or(Error::Underflow)?;
         let amount_1 = liquidity
             .checked_mul(diff_1)
             .and_then(|v| v.checked_div(Q96))
@@ -120,7 +134,9 @@ pub fn calculate_amounts(
 
         (amount_0, amount_1)
     } else {
-        let diff = sqrt_ratio_upper.checked_sub(sqrt_ratio_lower).ok_or(Error::Underflow)?;
+        let diff = sqrt_ratio_upper
+            .checked_sub(sqrt_ratio_lower)
+            .ok_or(Error::Underflow)?;
         let amount_1 = liquidity
             .checked_mul(diff)
             .and_then(|v| v.checked_div(Q96))
@@ -160,7 +176,7 @@ mod tests {
         let sqrt_price = 79228162514264337593543950336u128;
         let tick_lower = 100;
         let tick_upper = 200;
-        
+
         let liquidity = calculate_liquidity(sqrt_price, tick_lower, tick_upper, 1000000, 0);
         assert!(liquidity.is_ok() || liquidity.is_err());
     }
@@ -171,7 +187,7 @@ mod tests {
         let tick_lower = -100;
         let tick_upper = 100;
         let liquidity = 1000000u128;
-        
+
         let result = calculate_amounts(sqrt_price, tick_lower, tick_upper, liquidity);
         assert!(result.is_ok() || result.is_err());
     }

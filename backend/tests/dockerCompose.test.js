@@ -33,7 +33,7 @@ describe('docker-compose.yml data stack (#1571)', () => {
   it.each(['redis', 'postgres'])('%s has a healthcheck', (name) => {
     const hc = services[name].healthcheck;
     expect(hc).toBeDefined();
-    expect(hc.test.join(' ')).toMatch(/redis-cli ping|pg_isready/);
+    expect(hc.test.join(' ')).toMatch(/redis-cli.*ping|pg_isready/);
     expect(hc.retries).toBeGreaterThan(0);
   });
 
@@ -46,9 +46,10 @@ describe('docker-compose.yml data stack (#1571)', () => {
   });
 
   it('redis enables AOF persistence', () => {
-    expect(services.redis.command).toEqual(
-      expect.arrayContaining(['--appendonly', 'yes'])
-    );
+    const cmd = Array.isArray(services.redis.command)
+      ? services.redis.command.join(' ')
+      : String(services.redis.command);
+    expect(cmd).toMatch(/--appendonly\s+yes/);
   });
 
   it('isolates data stores on an internal network with no host ports', () => {

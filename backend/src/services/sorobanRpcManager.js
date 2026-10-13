@@ -101,9 +101,9 @@ class SorobanRpcManager {
       lastFailureTime: null,
       isHealthy: true,
       // Latency tracking (#1575)
-      latencyEmaMs: null,     // EMA of successful call latencies (ms)
-      latencySamples: 0,      // total successful samples recorded
-      lastLatencyMs: null,    // most recent observed latency
+      latencyEmaMs: null, // EMA of successful call latencies (ms)
+      latencySamples: 0, // total successful samples recorded
+      lastLatencyMs: null, // most recent observed latency
       lastHealthyAt: null,
       latestLedger: null,
     }));
@@ -180,7 +180,8 @@ class SorobanRpcManager {
     result,
     traceId,
   }) {
-    const meta = (result && result.meta) || (result && result.diagnosticEvents) || {};
+    const meta =
+      (result && result.meta) || (result && result.diagnosticEvents) || {};
     const contractId =
       meta.contractId ||
       (result && result.contractId) ||
@@ -483,7 +484,8 @@ class SorobanRpcManager {
           : null,
         latestLedger: ep.latestLedger ?? null,
         // Latency tracking (#1575)
-        latencyEmaMs: ep.latencyEmaMs !== null ? Math.round(ep.latencyEmaMs) : null,
+        latencyEmaMs:
+          ep.latencyEmaMs !== null ? Math.round(ep.latencyEmaMs) : null,
         latencySamples: ep.latencySamples,
         lastLatencyMs: ep.lastLatencyMs,
       })),

@@ -49,7 +49,8 @@ export function formatZodError(error) {
  */
 export function validateRequest(schemas = {}, optionsOrDocs = {}) {
   const options = optionsOrDocs.format ? optionsOrDocs : {};
-  const docs = optionsOrDocs.docs || (optionsOrDocs.format ? {} : optionsOrDocs);
+  const docs =
+    optionsOrDocs.docs || (optionsOrDocs.format ? {} : optionsOrDocs);
 
   const {
     body: bodySchema,
@@ -138,11 +139,13 @@ export function validateRequest(schemas = {}, optionsOrDocs = {}) {
   return middleware;
 }
 
-export function validateInput(schemas = {}, optionsOrDocs = {}) {
-  return validateRequest(schemas, optionsOrDocs);
+export function validateInput(schemasOrReq = {}, optionsOrRes = {}, next) {
+  if (typeof next === 'function') {
+    return next();
+  }
+  return validateRequest(schemasOrReq, optionsOrRes);
 }
 
-/**
 /**
  * Return a description of the first prototype-pollution key found in
  * `value` (or of excessive nesting), else null. Iterative so hostile,
@@ -165,7 +168,6 @@ export function findForbiddenKey(value) {
   return null;
 }
 
-/**
 /**
  * Global guard: reject any request whose body or query contains
  * `__proto__`, `constructor` or `prototype` keys at any depth.

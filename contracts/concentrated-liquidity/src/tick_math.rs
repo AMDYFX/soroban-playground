@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contracttype};
+use soroban_sdk::contracttype;
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -26,15 +26,25 @@ impl U256 {
 
         let carry = if lo >= (1u128 << 127) { 1 } else { 0 };
         let mid_with_carry = mid.wrapping_add(carry);
-        let carry2 = if mid_with_carry >= (1u128 << 127) { 1 } else { 0 };
+        let carry2 = if mid_with_carry >= (1u128 << 127) {
+            1
+        } else {
+            0
+        };
         let _hi_final = hi.wrapping_add(carry2);
 
-        U256 { lo: lo, hi: mid_with_carry }
+        U256 {
+            lo: lo,
+            hi: mid_with_carry,
+        }
     }
 
     pub fn shr(self, shift: u32) -> Self {
         if shift >= 128 {
-            U256 { lo: self.hi >> (shift - 128), hi: 0 }
+            U256 {
+                lo: self.hi >> (shift - 128),
+                hi: 0,
+            }
         } else if shift == 0 {
             self
         } else {
@@ -70,28 +80,145 @@ pub const Q96: u128 = 1u128 << 96;
 pub const MIN_SQRT_RATIO: u128 = 4295128739;
 pub const MAX_SQRT_RATIO: u128 = u128::MAX;
 
-const TICK_BASE_NUMERATOR: U256 = U256 { lo: 0xbd6fad37aa2d1a594001, hi: 0xfffcb933 };
+const TICK_BASE_NUMERATOR: U256 = U256 {
+    lo: 0xbd6fad37aa2d1a594001,
+    hi: 0xfffcb933,
+};
 
 const SQRT_RATIO_TICKS: [(U256, u32); 25] = [
-    (U256 { lo: 0xfff97272373d413259a46990580e213a, hi: 0 }, 0x1),
-    (U256 { lo: 0xfff2e50f5f656932ef12357cf3c7fdcc, hi: 0 }, 0x2),
-    (U256 { lo: 0xffe5caca7e10e4e61c3624eaa0941cd0, hi: 0 }, 0x4),
-    (U256 { lo: 0xffcb9843d60f6159c9db58835c926644, hi: 0 }, 0x8),
-    (U256 { lo: 0xff973b41fa98c081472e6896dfb254c0, hi: 0 }, 0x10),
-    (U256 { lo: 0xff2ea16466c96a3843eb72a57c4a0980, hi: 0 }, 0x20),
-    (U256 { lo: 0xfe5dee046a99a2a811c461f1969c3053, hi: 0 }, 0x40),
-    (U256 { lo: 0xfcbe86c7900a88aedcffc83b479aa3a4, hi: 0 }, 0x80),
-    (U256 { lo: 0xf987a7253ac413176f2b074cf7815e54, hi: 0 }, 0x100),
-    (U256 { lo: 0xf3392b0822b70005940c7a398e4b70f3, hi: 0 }, 0x200),
-    (U256 { lo: 0xe7159475a2c29b7443b29c7fa6e889d9, hi: 0 }, 0x400),
-    (U256 { lo: 0xd097f3bdfd2022b8845ad8f792aa5825, hi: 0 }, 0x800),
-    (U256 { lo: 0xa9f746462d870fdf8a65dc1f90e061e5, hi: 0 }, 0x1000),
-    (U256 { lo: 0x70d869a156d2a1b890bb3df62baf32f7, hi: 0 }, 0x2000),
-    (U256 { lo: 0x31be135f97d08fd981231505542fcfa6, hi: 0 }, 0x4000),
-    (U256 { lo: 0x9aa508b5b7a84e1c677de54f3e99bc9, hi: 0 }, 0x8000),
-    (U256 { lo: 0x5d6af8dedb81196699c329225ee604, hi: 0 }, 0x10000),
-    (U256 { lo: 0x2216e584f5fa1695f79367a40494, hi: 0 }, 0x20000),
-    (U256 { lo: 0x48a170391f7dc42444e8fa2, hi: 0 }, 0x40000),
+    (
+        U256 {
+            lo: 0xfff97272373d413259a46990580e213a,
+            hi: 0,
+        },
+        0x1,
+    ),
+    (
+        U256 {
+            lo: 0xfff2e50f5f656932ef12357cf3c7fdcc,
+            hi: 0,
+        },
+        0x2,
+    ),
+    (
+        U256 {
+            lo: 0xffe5caca7e10e4e61c3624eaa0941cd0,
+            hi: 0,
+        },
+        0x4,
+    ),
+    (
+        U256 {
+            lo: 0xffcb9843d60f6159c9db58835c926644,
+            hi: 0,
+        },
+        0x8,
+    ),
+    (
+        U256 {
+            lo: 0xff973b41fa98c081472e6896dfb254c0,
+            hi: 0,
+        },
+        0x10,
+    ),
+    (
+        U256 {
+            lo: 0xff2ea16466c96a3843eb72a57c4a0980,
+            hi: 0,
+        },
+        0x20,
+    ),
+    (
+        U256 {
+            lo: 0xfe5dee046a99a2a811c461f1969c3053,
+            hi: 0,
+        },
+        0x40,
+    ),
+    (
+        U256 {
+            lo: 0xfcbe86c7900a88aedcffc83b479aa3a4,
+            hi: 0,
+        },
+        0x80,
+    ),
+    (
+        U256 {
+            lo: 0xf987a7253ac413176f2b074cf7815e54,
+            hi: 0,
+        },
+        0x100,
+    ),
+    (
+        U256 {
+            lo: 0xf3392b0822b70005940c7a398e4b70f3,
+            hi: 0,
+        },
+        0x200,
+    ),
+    (
+        U256 {
+            lo: 0xe7159475a2c29b7443b29c7fa6e889d9,
+            hi: 0,
+        },
+        0x400,
+    ),
+    (
+        U256 {
+            lo: 0xd097f3bdfd2022b8845ad8f792aa5825,
+            hi: 0,
+        },
+        0x800,
+    ),
+    (
+        U256 {
+            lo: 0xa9f746462d870fdf8a65dc1f90e061e5,
+            hi: 0,
+        },
+        0x1000,
+    ),
+    (
+        U256 {
+            lo: 0x70d869a156d2a1b890bb3df62baf32f7,
+            hi: 0,
+        },
+        0x2000,
+    ),
+    (
+        U256 {
+            lo: 0x31be135f97d08fd981231505542fcfa6,
+            hi: 0,
+        },
+        0x4000,
+    ),
+    (
+        U256 {
+            lo: 0x9aa508b5b7a84e1c677de54f3e99bc9,
+            hi: 0,
+        },
+        0x8000,
+    ),
+    (
+        U256 {
+            lo: 0x5d6af8dedb81196699c329225ee604,
+            hi: 0,
+        },
+        0x10000,
+    ),
+    (
+        U256 {
+            lo: 0x2216e584f5fa1695f79367a40494,
+            hi: 0,
+        },
+        0x20000,
+    ),
+    (
+        U256 {
+            lo: 0x48a170391f7dc42444e8fa2,
+            hi: 0,
+        },
+        0x40000,
+    ),
     (U256 { lo: 0, hi: 0 }, 0),
     (U256 { lo: 0, hi: 0 }, 0),
     (U256 { lo: 0, hi: 0 }, 0),
@@ -132,8 +259,20 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: u128) -> Result<i32, crate::Error>
     let mut ratio = U256::from_u128(sqrt_ratio_x96);
 
     let thresholds = [
-        (U256 { lo: 0, hi: 0x10000000000000000 }, 0x8000),
-        (U256 { lo: 0, hi: 0x100000000 }, 0x4000),
+        (
+            U256 {
+                lo: 0,
+                hi: 0x10000000000000000,
+            },
+            0x8000,
+        ),
+        (
+            U256 {
+                lo: 0,
+                hi: 0x100000000,
+            },
+            0x4000,
+        ),
         (U256 { lo: 0, hi: 0x10000 }, 0x2000),
         (U256 { lo: 0, hi: 0x100 }, 0x1000),
         (U256 { lo: 0, hi: 0x10 }, 0x800),
@@ -144,7 +283,19 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: u128) -> Result<i32, crate::Error>
     for (threshold, bit) in thresholds.iter() {
         if ratio.hi >= threshold.hi || (ratio.hi == threshold.hi && ratio.lo >= threshold.lo) {
             tick |= *bit;
-            ratio = ratio.shr(if *bit >= 0x1000 { 64 } else if *bit >= 0x100 { 32 } else if *bit >= 0x10 { 16 } else if *bit >= 0x4 { 8 } else if *bit >= 0x2 { 4 } else { 2 });
+            ratio = ratio.shr(if *bit >= 0x1000 {
+                64
+            } else if *bit >= 0x100 {
+                32
+            } else if *bit >= 0x10 {
+                16
+            } else if *bit >= 0x4 {
+                8
+            } else if *bit >= 0x2 {
+                4
+            } else {
+                2
+            });
         }
     }
 
@@ -177,7 +328,7 @@ pub fn get_tick_at_sqrt_ratio(sqrt_ratio_x96: u128) -> Result<i32, crate::Error>
 pub fn get_tick_at_sqrt_ratio_round_up(sqrt_ratio_x96: u128) -> Result<i32, crate::Error> {
     let tick = get_tick_at_sqrt_ratio(sqrt_ratio_x96)?;
     let sqrt_ratio_at_tick = get_sqrt_ratio_at_tick(tick)?;
-    
+
     if sqrt_ratio_at_tick < sqrt_ratio_x96 {
         Ok(tick + 1)
     } else {
@@ -188,7 +339,7 @@ pub fn get_tick_at_sqrt_ratio_round_up(sqrt_ratio_x96: u128) -> Result<i32, crat
 pub fn get_tick_at_sqrt_ratio_round_down(sqrt_ratio_x96: u128) -> Result<i32, crate::Error> {
     let tick = get_tick_at_sqrt_ratio(sqrt_ratio_x96)?;
     let sqrt_ratio_at_tick = get_sqrt_ratio_at_tick(tick)?;
-    
+
     if sqrt_ratio_at_tick > sqrt_ratio_x96 {
         Ok(tick - 1)
     } else {
@@ -204,7 +355,7 @@ mod tests {
     fn test_tick_math_basic() {
         let sqrt_ratio = get_sqrt_ratio_at_tick(0).unwrap();
         assert!(sqrt_ratio > 0);
-        
+
         let tick = get_tick_at_sqrt_ratio(sqrt_ratio).unwrap();
         // tick can be 0 or -1 depending on implementation
         assert!(tick >= -1 && tick <= 1);

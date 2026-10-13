@@ -202,12 +202,7 @@ router.post(
   asyncHandler(async (req, res, next) => {
     const patentId = parseId(req.params.id);
     if (!patentId) return next(createHttpError(400, 'Invalid patent ID'));
-    const errs = requireFields(req.body, [
-      'payer',
-      'payee',
-      'amount',
-      'asset',
-    ]);
+    const errs = requireFields(req.body, ['payer', 'payee', 'amount', 'asset']);
     if (errs) return next(createHttpError(400, 'Validation failed', errs));
 
     const result = await patentService.createEscrow({ ...req.body, patentId });

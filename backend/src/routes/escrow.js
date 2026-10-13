@@ -91,7 +91,13 @@ router.get(
   asyncHandler(async (_req, res) => {
     res.json({
       success: true,
-      data: { initialized, admin: adminAddress, arbiterFeeBps, escrowCount, paused },
+      data: {
+        initialized,
+        admin: adminAddress,
+        arbiterFeeBps,
+        escrowCount,
+        paused,
+      },
     });
   })
 );
@@ -139,7 +145,10 @@ router.post(
     if (amounts.some((a) => a <= 0))
       throw createHttpError(400, 'All milestone amounts must be positive');
     if (amounts.some((a) => !Number.isFinite(a)))
-      throw createHttpError(400, 'All milestone amounts must be finite numbers');
+      throw createHttpError(
+        400,
+        'All milestone amounts must be finite numbers'
+      );
 
     const sum = amounts.reduce((a, b) => a + b, 0);
     if (Math.abs(sum - total) > 0.0001)

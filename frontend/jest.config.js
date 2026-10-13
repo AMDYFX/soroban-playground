@@ -42,6 +42,7 @@ const config = {
         plugins: [
           "@babel/plugin-transform-dynamic-import",
           "@babel/plugin-transform-modules-commonjs",
+          "babel-plugin-transform-import-meta",
         ],
       },
     ],
@@ -51,6 +52,7 @@ const config = {
         plugins: [
           "@babel/plugin-transform-dynamic-import",
           "@babel/plugin-transform-modules-commonjs",
+          "babel-plugin-transform-import-meta",
         ],
       },
     ],

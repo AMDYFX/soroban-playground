@@ -99,34 +99,35 @@ router.post(
   requireAuth,
   validateInput({ body: assetBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { symbol, name, decimals, initialPrice } = req.body;
+    try {
+      const { symbol, name, decimals, initialPrice } = req.body;
 
-    if (
-      !symbol ||
-      !name ||
-      decimals === undefined ||
-      decimals < 0 ||
-      !initialPrice
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields: symbol, name, decimals, initialPrice',
+      if (
+        !symbol ||
+        !name ||
+        decimals === undefined ||
+        decimals < 0 ||
+        !initialPrice
+      ) {
+        return res.status(400).json({
+          success: false,
+          error:
+            'Missing required fields: symbol, name, decimals, initialPrice',
+        });
+      }
+
+      const result = await syntheticAssetsService.registerAsset({
+        symbol,
+        name,
+        decimals,
+        initialPrice,
       });
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Register asset error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.registerAsset({
-      symbol,
-      name,
-      decimals,
-      initialPrice,
-    });
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Register asset error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -139,28 +140,29 @@ router.post(
   requireAuth,
   validateInput({ body: mintBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { userAddress, assetSymbol, collateralAmount, mintAmount } = req.body;
+    try {
+      const { userAddress, assetSymbol, collateralAmount, mintAmount } =
+        req.body;
 
-    if (!userAddress || !assetSymbol || !collateralAmount || !mintAmount) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
+      if (!userAddress || !assetSymbol || !collateralAmount || !mintAmount) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      const result = await syntheticAssetsService.mintSynthetic(
+        userAddress,
+        assetSymbol,
+        collateralAmount,
+        mintAmount
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Mint error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.mintSynthetic(
-      userAddress,
-      assetSymbol,
-      collateralAmount,
-      mintAmount
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Mint error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -173,27 +175,27 @@ router.post(
   requireAuth,
   validateInput({ body: burnBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { userAddress, positionId, burnAmount } = req.body;
+    try {
+      const { userAddress, positionId, burnAmount } = req.body;
 
-    if (!userAddress || !positionId || !burnAmount) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
+      if (!userAddress || !positionId || !burnAmount) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      const result = await syntheticAssetsService.burnSynthetic(
+        userAddress,
+        positionId,
+        burnAmount
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Burn error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.burnSynthetic(
-      userAddress,
-      positionId,
-      burnAmount
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Burn error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -206,27 +208,27 @@ router.post(
   requireAuth,
   validateInput({ body: addCollateralBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { userAddress, positionId, additionalCollateral } = req.body;
+    try {
+      const { userAddress, positionId, additionalCollateral } = req.body;
 
-    if (!userAddress || !positionId || !additionalCollateral) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
+      if (!userAddress || !positionId || !additionalCollateral) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      const result = await syntheticAssetsService.addCollateral(
+        userAddress,
+        positionId,
+        additionalCollateral
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Add collateral error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.addCollateral(
-      userAddress,
-      positionId,
-      additionalCollateral
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Add collateral error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -239,43 +241,44 @@ router.post(
   requireAuth,
   validateInput({ body: openTradeBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { userAddress, assetSymbol, direction, margin, leverage } = req.body;
+    try {
+      const { userAddress, assetSymbol, direction, margin, leverage } =
+        req.body;
 
-    if (
-      !userAddress ||
-      !assetSymbol ||
-      !direction ||
-      !margin ||
-      leverage === undefined ||
-      leverage === null
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
+      if (
+        !userAddress ||
+        !assetSymbol ||
+        !direction ||
+        !margin ||
+        leverage === undefined ||
+        leverage === null
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      if (direction === 'INVALID_DIRECTION') {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      const result = await syntheticAssetsService.openTrade(
+        userAddress,
+        assetSymbol,
+        direction,
+        margin,
+        leverage
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Open trade error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    if (direction === 'INVALID_DIRECTION') {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
-    }
-
-    const result = await syntheticAssetsService.openTrade(
-      userAddress,
-      assetSymbol,
-      direction,
-      margin,
-      leverage
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Open trade error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -288,26 +291,26 @@ router.post(
   requireAuth,
   validateInput({ body: closeTradeBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { userAddress, positionId } = req.body;
+    try {
+      const { userAddress, positionId } = req.body;
 
-    if (!userAddress || !positionId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
+      if (!userAddress || !positionId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      const result = await syntheticAssetsService.closeTrade(
+        userAddress,
+        positionId
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Close trade error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.closeTrade(
-      userAddress,
-      positionId
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Close trade error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -320,27 +323,27 @@ router.post(
   requireAuth,
   validateInput({ body: priceBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { assetSymbol, newPrice, confidence } = req.body;
+    try {
+      const { assetSymbol, newPrice, confidence } = req.body;
 
-    if (!assetSymbol || !newPrice || confidence === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required fields',
-      });
+      if (!assetSymbol || !newPrice || confidence === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields',
+        });
+      }
+
+      const result = await syntheticAssetsService.updatePrice(
+        assetSymbol,
+        newPrice,
+        confidence
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Update price error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.updatePrice(
-      assetSymbol,
-      newPrice,
-      confidence
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Update price error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -352,15 +355,15 @@ router.get(
   '/price/:symbol',
   validateInput({ params: symbolParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { symbol } = req.params;
-    const price = await syntheticAssetsService.getAssetPrice(symbol);
+    try {
+      const { symbol } = req.params;
+      const price = await syntheticAssetsService.getAssetPrice(symbol);
 
-    res.json({ success: true, data: price });
-  } catch (error) {
-    logger.error('Get price error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: price });
+    } catch (error) {
+      logger.error('Get price error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 
@@ -372,15 +375,15 @@ router.get(
   '/position/:id',
   validateInput({ params: idParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { id } = req.params;
-    const position = await syntheticAssetsService.getPosition(id);
+    try {
+      const { id } = req.params;
+      const position = await syntheticAssetsService.getPosition(id);
 
-    res.json({ success: true, data: position });
-  } catch (error) {
-    logger.error('Get position error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: position });
+    } catch (error) {
+      logger.error('Get position error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 
@@ -392,15 +395,15 @@ router.get(
   '/trade/:id',
   validateInput({ params: idParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { id } = req.params;
-    const position = await syntheticAssetsService.getTradingPosition(id);
+    try {
+      const { id } = req.params;
+      const position = await syntheticAssetsService.getTradingPosition(id);
 
-    res.json({ success: true, data: position });
-  } catch (error) {
-    logger.error('Get trading position error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: position });
+    } catch (error) {
+      logger.error('Get trading position error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 
@@ -412,15 +415,15 @@ router.get(
   '/ratio/:id',
   validateInput({ params: idParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { id } = req.params;
-    const ratio = await syntheticAssetsService.getCollateralRatio(id);
+    try {
+      const { id } = req.params;
+      const ratio = await syntheticAssetsService.getCollateralRatio(id);
 
-    res.json({ success: true, data: { ratio } });
-  } catch (error) {
-    logger.error('Get collateral ratio error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: { ratio } });
+    } catch (error) {
+      logger.error('Get collateral ratio error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 
@@ -432,15 +435,15 @@ router.get(
   '/health/:id',
   validateInput({ params: idParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { id } = req.params;
-    const healthFactor = await syntheticAssetsService.getHealthFactor(id);
+    try {
+      const { id } = req.params;
+      const healthFactor = await syntheticAssetsService.getHealthFactor(id);
 
-    res.json({ success: true, data: { healthFactor } });
-  } catch (error) {
-    logger.error('Get health factor error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: { healthFactor } });
+    } catch (error) {
+      logger.error('Get health factor error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 
@@ -452,15 +455,15 @@ router.get(
   '/liquidatable/:id',
   validateInput({ params: idParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { id } = req.params;
-    const isLiquidatable = await syntheticAssetsService.isLiquidatable(id);
+    try {
+      const { id } = req.params;
+      const isLiquidatable = await syntheticAssetsService.isLiquidatable(id);
 
-    res.json({ success: true, data: { isLiquidatable } });
-  } catch (error) {
-    logger.error('Check liquidation error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: { isLiquidatable } });
+    } catch (error) {
+      logger.error('Check liquidation error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 
@@ -468,16 +471,20 @@ router.get(
  * Get protocol parameters
  * GET /v1/synthetic-assets/params
  */
-router.get('/params', validateInput({ query: emptyQuery }), async (req, res) => {
-  try {
-    const params = await syntheticAssetsService.getProtocolParams();
+router.get(
+  '/params',
+  validateInput({ query: emptyQuery }),
+  async (req, res) => {
+    try {
+      const params = await syntheticAssetsService.getProtocolParams();
 
-    res.json({ success: true, data: params });
-  } catch (error) {
-    logger.error('Get protocol params error:', error);
-    res.status(500).json({ success: false, error: error.message });
+      res.json({ success: true, data: params });
+    } catch (error) {
+      logger.error('Get protocol params error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
-});
+);
 
 /**
  * Update protocol parameters (admin only)
@@ -488,38 +495,38 @@ router.put(
   requireAuth,
   validateInput({ body: protocolParamsBody, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const {
-      minCollateralRatio,
-      liquidationThreshold,
-      liquidationBonus,
-      feePercentage,
-    } = req.body;
+    try {
+      const {
+        minCollateralRatio,
+        liquidationThreshold,
+        liquidationBonus,
+        feePercentage,
+      } = req.body;
 
-    if (
-      minCollateralRatio === undefined ||
-      liquidationThreshold === undefined ||
-      liquidationBonus === undefined ||
-      feePercentage === undefined
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required parameters',
-      });
+      if (
+        minCollateralRatio === undefined ||
+        liquidationThreshold === undefined ||
+        liquidationBonus === undefined ||
+        feePercentage === undefined
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required parameters',
+        });
+      }
+
+      const result = await syntheticAssetsService.updateProtocolParams(
+        minCollateralRatio,
+        liquidationThreshold,
+        liquidationBonus,
+        feePercentage
+      );
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error('Update protocol params error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const result = await syntheticAssetsService.updateProtocolParams(
-      minCollateralRatio,
-      liquidationThreshold,
-      liquidationBonus,
-      feePercentage
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    logger.error('Update protocol params error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -527,16 +534,20 @@ router.put(
  * Get registered assets
  * GET /v1/synthetic-assets/assets
  */
-router.get('/assets', validateInput({ query: emptyQuery }), async (req, res) => {
-  try {
-    const assets = await syntheticAssetsService.getRegisteredAssets();
+router.get(
+  '/assets',
+  validateInput({ query: emptyQuery }),
+  async (req, res) => {
+    try {
+      const assets = await syntheticAssetsService.getRegisteredAssets();
 
-    res.json({ success: true, data: assets });
-  } catch (error) {
-    logger.error('Get assets error:', error);
-    res.status(500).json({ success: false, error: error.message });
+      res.json({ success: true, data: assets });
+    } catch (error) {
+      logger.error('Get assets error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
-});
+);
 
 /**
  * Calculate maximum mintable amount
@@ -546,26 +557,26 @@ router.get(
   '/max-mintable',
   validateInput({ query: maxMintableQuery }),
   async (req, res) => {
-  try {
-    const { assetSymbol, collateralAmount } = req.query;
+    try {
+      const { assetSymbol, collateralAmount } = req.query;
 
-    if (!assetSymbol || !collateralAmount) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing required query parameters',
-      });
+      if (!assetSymbol || !collateralAmount) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required query parameters',
+        });
+      }
+
+      const maxMintable = await syntheticAssetsService.getMaxMintable(
+        assetSymbol,
+        collateralAmount
+      );
+
+      res.json({ success: true, data: { maxMintable } });
+    } catch (error) {
+      logger.error('Get max mintable error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
-
-    const maxMintable = await syntheticAssetsService.getMaxMintable(
-      assetSymbol,
-      collateralAmount
-    );
-
-    res.json({ success: true, data: { maxMintable } });
-  } catch (error) {
-    logger.error('Get max mintable error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
   }
 );
 
@@ -577,15 +588,15 @@ router.get(
   '/pnl/:id',
   validateInput({ params: idParams, query: emptyQuery }),
   async (req, res) => {
-  try {
-    const { id } = req.params;
-    const pnl = await syntheticAssetsService.getTradingPnL(id);
+    try {
+      const { id } = req.params;
+      const pnl = await syntheticAssetsService.getTradingPnL(id);
 
-    res.json({ success: true, data: { pnl } });
-  } catch (error) {
-    logger.error('Get trading PnL error:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+      res.json({ success: true, data: { pnl } });
+    } catch (error) {
+      logger.error('Get trading PnL error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   }
 );
 

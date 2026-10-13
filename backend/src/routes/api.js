@@ -53,7 +53,10 @@ const mutatingRouteLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, error: 'Too many requests, please try again later' },
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later',
+  },
 });
 
 // Version discovery endpoint
@@ -159,12 +162,27 @@ router.use('/bug-bounty', bugBountyRoutes);
 router.use('/sports', stellarIdValidation, sportsRoutes);
 router.use('/escrow', stellarIdValidation, mutatingRouteLimiter, escrowRoutes);
 router.use('/nft-amm', stellarIdValidation, mutatingRouteLimiter, nftAmmRoutes);
-router.use('/lending', stellarIdValidation, mutatingRouteLimiter, lendingRoutes);
+router.use(
+  '/lending',
+  stellarIdValidation,
+  mutatingRouteLimiter,
+  lendingRoutes
+);
 router.use('/social', stellarIdValidation, socialRoutes);
-router.use('/pause-toggle', stellarIdValidation, mutatingRouteLimiter, pauseToggleRoutes);
+router.use(
+  '/pause-toggle',
+  stellarIdValidation,
+  mutatingRouteLimiter,
+  pauseToggleRoutes
+);
 router.use('/token-gated-access', stellarIdValidation, tokenGatedAccessRoutes);
 router.use('/price-aggregator', stellarIdValidation, priceAggregatorRoutes);
-router.use('/tokenized-reit', stellarIdValidation, mutatingRouteLimiter, tokenizedReitRoutes);
+router.use(
+  '/tokenized-reit',
+  stellarIdValidation,
+  mutatingRouteLimiter,
+  tokenizedReitRoutes
+);
 router.use('/readiness', readinessRulesRoutes);
 
 import musicLicensingRoutes from './musicLicensingRoutes.js';

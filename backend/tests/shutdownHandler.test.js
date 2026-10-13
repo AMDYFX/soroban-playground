@@ -29,9 +29,7 @@ describe('SIGTERM/SIGINT Graceful Shutdown Handler', () => {
     const closeDatabaseSpy = jest
       .spyOn(connection, 'closeDatabase')
       .mockResolvedValue();
-    const endAllPoolsSpy = jest
-      .spyOn(pool, 'endAllPools')
-      .mockResolvedValue();
+    const endAllPoolsSpy = jest.spyOn(pool, 'endAllPools').mockResolvedValue();
 
     const { handleSignal } = setupGracefulShutdown({
       server: mockServer,

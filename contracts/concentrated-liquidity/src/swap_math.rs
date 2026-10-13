@@ -2,8 +2,8 @@
 
 use soroban_sdk::{Env, Map};
 
-use crate::{TickBitmap, TickInfo, PoolState, Error, SwapResult};
-use crate::tick_math::{get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, Q96, MAX_TICK, MIN_TICK};
+use crate::tick_math::{get_sqrt_ratio_at_tick, get_tick_at_sqrt_ratio, MAX_TICK, MIN_TICK, Q96};
+use crate::{Error, PoolState, SwapResult, TickBitmap, TickInfo};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SwapStepResult {
@@ -25,35 +25,45 @@ pub fn compute_swap_step(
 ) -> Result<SwapStepResult, Error> {
     if zero_for_one {
         let amount_in_max = liquidity
-            .checked_mul(sqrt_price_current_x96.checked_sub(sqrt_price_target_x96).ok_or(Error::Underflow)?)
+            .checked_mul(
+                sqrt_price_current_x96
+                    .checked_sub(sqrt_price_target_x96)
+                    .ok_or(Error::Underflow)?,
+            )
             .and_then(|v| v.checked_div(sqrt_price_target_x96))
             .and_then(|v| v.checked_div(Q96))
             .ok_or(Error::Overflow)?;
-        
+
         let amount_in = amount_remaining.min(amount_in_max);
-        
+
         let sqrt_price_next_x96 = if amount_in == amount_in_max {
             sqrt_price_target_x96
         } else {
-            let numerator = liquidity.checked_mul(sqrt_price_current_x96).ok_or(Error::Overflow)?;
+            let numerator = liquidity
+                .checked_mul(sqrt_price_current_x96)
+                .ok_or(Error::Overflow)?;
             let denominator = liquidity
                 .checked_add(amount_in.checked_mul(Q96).ok_or(Error::Overflow)?)
                 .ok_or(Error::Overflow)?;
             numerator / denominator
         };
-        
+
         let amount_out = liquidity
-            .checked_mul(sqrt_price_current_x96.checked_sub(sqrt_price_next_x96).ok_or(Error::Underflow)?)
+            .checked_mul(
+                sqrt_price_current_x96
+                    .checked_sub(sqrt_price_next_x96)
+                    .ok_or(Error::Underflow)?,
+            )
             .and_then(|v| v.checked_div(Q96))
             .ok_or(Error::Overflow)?;
-        
+
         let fee_amount = amount_in
             .checked_mul(fee_bps)
             .and_then(|v| v.checked_div(10000))
             .ok_or(Error::Overflow)?;
-        
+
         let tick = get_tick_at_sqrt_ratio(sqrt_price_next_x96)?;
-        
+
         Ok(SwapStepResult {
             sqrt_price_x96: sqrt_price_next_x96,
             tick,
@@ -64,12 +74,16 @@ pub fn compute_swap_step(
         })
     } else {
         let amount_in_max = liquidity
-            .checked_mul(sqrt_price_target_x96.checked_sub(sqrt_price_current_x96).ok_or(Error::Underflow)?)
+            .checked_mul(
+                sqrt_price_target_x96
+                    .checked_sub(sqrt_price_current_x96)
+                    .ok_or(Error::Underflow)?,
+            )
             .and_then(|v| v.checked_div(Q96))
             .ok_or(Error::Overflow)?;
-        
+
         let amount_in = amount_remaining.min(amount_in_max);
-        
+
         let sqrt_price_next_x96 = if amount_in == amount_in_max {
             sqrt_price_target_x96
         } else {
@@ -79,19 +93,23 @@ pub fn compute_swap_step(
                 .and_then(|v| v.checked_div(liquidity))
                 .ok_or(Error::Overflow)?
         };
-        
+
         let amount_out = liquidity
-            .checked_mul(sqrt_price_next_x96.checked_sub(sqrt_price_current_x96).ok_or(Error::Underflow)?)
+            .checked_mul(
+                sqrt_price_next_x96
+                    .checked_sub(sqrt_price_current_x96)
+                    .ok_or(Error::Underflow)?,
+            )
             .and_then(|v| v.checked_div(Q96))
             .ok_or(Error::Overflow)?;
-        
+
         let fee_amount = amount_in
             .checked_mul(fee_bps)
             .and_then(|v| v.checked_div(10000))
             .ok_or(Error::Overflow)?;
-        
+
         let tick = get_tick_at_sqrt_ratio(sqrt_price_next_x96)?;
-        
+
         Ok(SwapStepResult {
             sqrt_price_x96: sqrt_price_next_x96,
             tick,
@@ -127,8 +145,9 @@ pub fn swap(
             sqrt_price_limit_x96.min(get_sqrt_ratio_at_tick(tick + 1)?)
         };
 
-        if (zero_for_one && sqrt_price_x96 <= sqrt_price_target_x96) ||
-           (!zero_for_one && sqrt_price_x96 >= sqrt_price_target_x96) {
+        if (zero_for_one && sqrt_price_x96 <= sqrt_price_target_x96)
+            || (!zero_for_one && sqrt_price_x96 >= sqrt_price_target_x96)
+        {
             break;
         }
 
@@ -143,9 +162,15 @@ pub fn swap(
 
         sqrt_price_x96 = step.sqrt_price_x96;
         tick = step.tick;
-        amount_remaining = amount_remaining.checked_sub(step.amount_in).ok_or(Error::Underflow)?;
-        amount_out_total = amount_out_total.checked_add(step.amount_out).ok_or(Error::Overflow)?;
-        fee_amount_total = fee_amount_total.checked_add(step.fee_amount).ok_or(Error::Overflow)?;
+        amount_remaining = amount_remaining
+            .checked_sub(step.amount_in)
+            .ok_or(Error::Underflow)?;
+        amount_out_total = amount_out_total
+            .checked_add(step.amount_out)
+            .ok_or(Error::Overflow)?;
+        fee_amount_total = fee_amount_total
+            .checked_add(step.fee_amount)
+            .ok_or(Error::Overflow)?;
 
         if tick != state.tick {
             let (next_tick, next_liquidity) = cross_tick(
@@ -157,7 +182,7 @@ pub fn swap(
                 state.fee_growth_global_0_x128,
                 state.fee_growth_global_1_x128,
             )?;
-            
+
             tick = next_tick;
             liquidity = next_liquidity;
         }
@@ -175,16 +200,26 @@ pub fn swap(
     }
 
     if zero_for_one {
-        state.fee_growth_global_1_x128 = state.fee_growth_global_1_x128
-            .checked_add(fee_amount_total.checked_mul(Q96).ok_or(Error::Overflow)?
-                .checked_div(liquidity.max(1))
-                .ok_or(Error::Overflow)?)
+        state.fee_growth_global_1_x128 = state
+            .fee_growth_global_1_x128
+            .checked_add(
+                fee_amount_total
+                    .checked_mul(Q96)
+                    .ok_or(Error::Overflow)?
+                    .checked_div(liquidity.max(1))
+                    .ok_or(Error::Overflow)?,
+            )
             .ok_or(Error::Overflow)?;
     } else {
-        state.fee_growth_global_0_x128 = state.fee_growth_global_0_x128
-            .checked_add(fee_amount_total.checked_mul(Q96).ok_or(Error::Overflow)?
-                .checked_div(liquidity.max(1))
-                .ok_or(Error::Overflow)?)
+        state.fee_growth_global_0_x128 = state
+            .fee_growth_global_0_x128
+            .checked_add(
+                fee_amount_total
+                    .checked_mul(Q96)
+                    .ok_or(Error::Overflow)?
+                    .checked_div(liquidity.max(1))
+                    .ok_or(Error::Overflow)?,
+            )
             .ok_or(Error::Overflow)?;
     }
 
@@ -193,8 +228,16 @@ pub fn swap(
     state.liquidity = liquidity;
 
     Ok(SwapResult {
-        amount_0: if zero_for_one { (amount_in - amount_remaining) as i128 } else { -((amount_out_total) as i128) },
-        amount_1: if zero_for_one { (amount_out_total) as i128 } else { -((amount_in as i128) - (amount_remaining as i128)) },
+        amount_0: if zero_for_one {
+            (amount_in - amount_remaining) as i128
+        } else {
+            -((amount_out_total) as i128)
+        },
+        amount_1: if zero_for_one {
+            (amount_out_total) as i128
+        } else {
+            -((amount_in as i128) - (amount_remaining as i128))
+        },
         fee_amount: fee_amount_total,
         sqrt_price_x96_after: sqrt_price_x96,
         tick_after: tick,
@@ -212,16 +255,18 @@ fn cross_tick(
     fee_growth_global_1_x128: u128,
 ) -> Result<(i32, u128), Error> {
     let tick_spacing = bitmap.tick_spacing;
-    
+
     let next_tick = if zero_for_one {
-        let (found, next) = bitmap.next_initialized_tick_within_one_word(tick, true, tick_spacing)?;
+        let (found, next) =
+            bitmap.next_initialized_tick_within_one_word(tick, true, tick_spacing)?;
         if found {
             next
         } else {
             MIN_TICK
         }
     } else {
-        let (found, next) = bitmap.next_initialized_tick_within_one_word(tick, false, tick_spacing)?;
+        let (found, next) =
+            bitmap.next_initialized_tick_within_one_word(tick, false, tick_spacing)?;
         if found {
             next
         } else {
@@ -251,15 +296,23 @@ fn cross_tick(
     let liquidity_delta = tick_info.liquidity_net;
     let new_liquidity = if zero_for_one {
         if liquidity_delta > 0 {
-            liquidity.checked_add(liquidity_delta as u128).ok_or(Error::Overflow)?
+            liquidity
+                .checked_add(liquidity_delta as u128)
+                .ok_or(Error::Overflow)?
         } else {
-            liquidity.checked_sub((-liquidity_delta) as u128).ok_or(Error::Underflow)?
+            liquidity
+                .checked_sub((-liquidity_delta) as u128)
+                .ok_or(Error::Underflow)?
         }
     } else {
         if liquidity_delta > 0 {
-            liquidity.checked_sub(liquidity_delta as u128).ok_or(Error::Underflow)?
+            liquidity
+                .checked_sub(liquidity_delta as u128)
+                .ok_or(Error::Underflow)?
         } else {
-            liquidity.checked_add((-liquidity_delta) as u128).ok_or(Error::Overflow)?
+            liquidity
+                .checked_add((-liquidity_delta) as u128)
+                .ok_or(Error::Overflow)?
         }
     };
 
@@ -287,8 +340,9 @@ mod tests {
         let liquidity = 1000000000000000000u128;
         let amount = 100000000000000000u128;
         let fee = 300u128;
-        
-        let result = compute_swap_step(sqrt_current, sqrt_target, liquidity, amount, fee, true).unwrap();
+
+        let result =
+            compute_swap_step(sqrt_current, sqrt_target, liquidity, amount, fee, true).unwrap();
         assert_eq!(result.amount_in, 0);
     }
 }

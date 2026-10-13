@@ -697,7 +697,9 @@ export async function runKnexStartupMigrations(customKnex = null) {
   const createdInstance = !customKnex;
 
   try {
-    console.log('[Migrations] Running Knex startup migrations with distributed locking...');
+    console.log(
+      '[Migrations] Running Knex startup migrations with distributed locking...'
+    );
     const [batchNo, log] = await knex.migrate.latest();
     console.log(
       `[Migrations] Startup migrations complete. Batch ${batchNo}: ${log.length} migration(s) applied.`
@@ -730,9 +732,11 @@ export async function runStartupMigrations(customKnex = null) {
   try {
     return await runKnexStartupMigrations(customKnex);
   } catch (err) {
-    console.warn('[Migrations] Knex startup migration fallback to legacy runner:', err.message);
+    console.warn(
+      '[Migrations] Knex startup migration fallback to legacy runner:',
+      err.message
+    );
     await initializeMigrationService().catch(() => {});
     return applyPendingMigrations({ dryRun: false });
   }
 }
-

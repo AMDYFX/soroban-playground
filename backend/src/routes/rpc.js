@@ -59,16 +59,29 @@ router.post(
 router.post(
   '/simulate',
   asyncHandler(async (req, res) => {
-    const { contractId, method, args = [], sourceAccount, fee, network } = req.body || {};
+    const {
+      contractId,
+      method,
+      args = [],
+      sourceAccount,
+      fee,
+      network,
+    } = req.body || {};
 
     if (!contractId || typeof contractId !== 'string') {
-      return res.status(400).json({ success: false, error: 'contractId is required' });
+      return res
+        .status(400)
+        .json({ success: false, error: 'contractId is required' });
     }
     if (!method || typeof method !== 'string') {
-      return res.status(400).json({ success: false, error: 'method is required' });
+      return res
+        .status(400)
+        .json({ success: false, error: 'method is required' });
     }
     if (!Array.isArray(args)) {
-      return res.status(400).json({ success: false, error: 'args must be an array' });
+      return res
+        .status(400)
+        .json({ success: false, error: 'args must be an array' });
     }
 
     const result = await sorobanRpcManager.simulateContractCall({

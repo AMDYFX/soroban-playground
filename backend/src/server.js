@@ -3,7 +3,8 @@
 
 import express from 'express';
 import morgan from 'morgan';
-import fs from 'fs'; import path from 'path';
+import fs from 'fs';
+import path from 'path';
 import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 
@@ -25,7 +26,7 @@ import {
   createAlpnServer,
   attachAcmeHttp01,
   watchTlsCertificates,
-} from './config/http2Ronfig.js';
+} from './config/http2Config.js';
 
 import { http2PushMiddleware } from './middleware/http2Push.js';
 
@@ -54,7 +55,7 @@ import { rateLimitMiddleware } from './middleware/rateLimiter.js';
 
 import { rejectPrototypePollution } from './middleware/validation.js';
 
-import oracleQeueRoute from './routes/oracleQueue.js';
+import oracleQueueRoute from './routes/oracleQueue.js';
 
 import { oracleWorkerPool } from './services/oracleWorkerPool.js';
 
@@ -183,7 +184,7 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal', '10.0.0.0/8']);
 let server;
 let websocketRedisClient = null;
 
-// TLS/SSL Hardening configuration — HTTP/2 ALNP prefers h2, falls back to 1.1.
+// TLS/SSL Hardening configuration — HTTP/2 ALPN prefers h2, falls back to 1.1.
 const httpsOptions = {
   minVersion: 'TLSv1.2',
   maxVersion: 'TLSv1.3',
@@ -192,9 +193,9 @@ const httpsOptions = {
     'TLS_CHACHA20_POLY1305_SHA256',
     'TLS_AES_128_GCM_SHA256',
     'ECDHE-RSA-AES256-GCM-SHA384',
-    'ECDHE-EC@SA-AES256-GCM-SHA384',
+    'ECDHE-ECDSA-AES256-GCM-SHA384',
     'ECDHE-RSA-AES128-GCM-SHA256',
-    'ECDHE-EC@SA-AES128-GCM-SHA256',
+    'ECDHE-ECDSA-AES128-GCM-SHA256',
     'ECDHE-ECDSA-CHACHA20-POLY1305',
     'ECDHE-RSA-CHACHA20-POLY1305',
     'DHE-RSA-AES256-GCM-SHA384',
@@ -229,7 +230,7 @@ try {
 // Let's Encrypt HTTP-01 challenges must be reachable before HSTS/rate limits.
 export const acmeChallengeStore = attachAcmeHttp01(app);
 
-// Fallback to HTTP/1.1 if no certs are provided, otherwise HTTP/2 + TLS 1.3 via ALMP.
+// Fallback to HTTP/1.1 if no certs are provided, otherwise HTTP/2 + TLS 1.3 via ALPN.
 server = createAlpnServer(app, hasCertificates ? httpsOptions : null);
 applyServerTuning(server);
 let stopCertificateWatch = () => {};

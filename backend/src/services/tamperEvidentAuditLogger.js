@@ -30,9 +30,7 @@ export function computeAuditHash(entry, previousHash = 'GENESIS') {
 export async function recordTamperEvidentAuditLog(data, db = null) {
   const timestamp = data.timestamp || new Date().toISOString();
   const previousHash =
-    auditChain.length > 0
-      ? auditChain[auditChain.length - 1].hash
-      : 'GENESIS';
+    auditChain.length > 0 ? auditChain[auditChain.length - 1].hash : 'GENESIS';
 
   const entry = {
     id: auditChain.length + 1,

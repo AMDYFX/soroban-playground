@@ -27,7 +27,7 @@ jest.mock('../src/database/connection.js', () => ({
       driver: sqlite3.Database,
     });
 
-    const schemaPath = path.resolve(process.cwd(), 'src/database/schema.sql');
+    const schemaPath = path.resolve(__dirname, '../src/database/schema.sql');
     const schema = await fs.readFile(schemaPath, 'utf-8');
     await mockDb.exec(schema);
 
@@ -70,18 +70,20 @@ const WALLET_B = `G${'B'.repeat(55)}`;
 let tenantAKey;
 let tenantBKey;
 
-function post(body, { wallet = WALLET_A, key = tenantAKey } = {}) {
+function post(body, { wallet = WALLET_A, key } = {}) {
+  const apiKey = (key || tenantAKey)?.key || key || tenantAKey;
   return request(app)
     .post('/api/workspace')
-    .set('x-api-key', key)
+    .set('x-api-key', apiKey)
     .set('x-wallet-address', wallet)
     .send(body);
 }
 
-function get(wallet = WALLET_A, key = tenantAKey) {
+function get(wallet = WALLET_A, key) {
+  const apiKey = (key || tenantAKey)?.key || key || tenantAKey;
   return request(app)
     .get('/api/workspace')
-    .set('x-api-key', key)
+    .set('x-api-key', apiKey)
     .set('x-wallet-address', wallet);
 }
 

@@ -7,8 +7,13 @@ import {
   addSpanEvent,
   injectTraceContext,
 } from '../utils/tracing.js';
-const { recordTamperEvidentAuditLog } = require('./tamperEvidentAuditLogger.js');
-const { spawnTracked, terminateChildProcess } = require('./childProcessManager.js');
+const {
+  recordTamperEvidentAuditLog,
+} = require('./tamperEvidentAuditLogger.js');
+const {
+  spawnTracked,
+  terminateChildProcess,
+} = require('./childProcessManager.js');
 
 const MAX_CONCURRENT = Number.parseInt(process.env.INVOKE_POOL_SIZE || '3', 10);
 const INVOKE_TIMEOUT_MS = Number.parseInt(
@@ -114,8 +119,7 @@ export function createCliArgs(request) {
     sourceAccount,
     '--network',
     request.network || process.env.DEFAULT_NETWORK || 'testnet',
-    '--'.
-    request.functionName,
+    '--'.request.functionName,
   ];
 
   for (const [key, value] of Object.entries(request.args || {})) {
@@ -237,7 +241,8 @@ export function buildCallGraph(parsed) {
     };
     addNode(node);
     if (parentId) addEdge(parentId, id);
-    const children = frame.subInvocations ?? frame.sub_invocations ?? frame.children ?? [];
+    const children =
+      frame.subInvocations ?? frame.sub_invocations ?? frame.children ?? [];
     if (Array.isArray(children)) {
       children.forEach((child, i) => walk(child, id, i));
     }
@@ -434,8 +439,16 @@ export async function invokeSorobanContract(request, { signal } = {}) {
                 action: 'contract_invoke',
                 contractId: request.contractId,
                 functionName: request.functionName,
-                ledgerSequence: request.ledgerSequence || request.ledger_sequence || output.parsed?.ledgerSequence || 100,
-                sessionId: request.sessionId || request.session_id || request.requestId || 'sess-invoke',
+                ledgerSequence:
+                  request.ledgerSequence ||
+                  request.ledger_sequence ||
+                  output.parsed?.ledgerSequence ||
+                  100,
+                sessionId:
+                  request.sessionId ||
+                  request.session_id ||
+                  request.requestId ||
+                  'sess-invoke',
                 userId: request.userId || request.user_id,
                 metadata: { args: request.args },
               }).catch(() => {});

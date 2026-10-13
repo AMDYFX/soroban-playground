@@ -69,7 +69,6 @@ export const syncBatchSchema = v.object(
   { strict: false }
 );
 
-
 /**
  * Workspace cloud sync payload (multi-file contracts).
  * The `workspace` document is a free-form map of editor state keyed by

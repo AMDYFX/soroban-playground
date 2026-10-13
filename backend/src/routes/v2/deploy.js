@@ -6,7 +6,10 @@ import {
   asyncHandler,
   createHttpError,
 } from '../../middleware/errorHandler.js';
-import { deployBatchContracts, deployContract } from '../../services/deployService.js';
+import {
+  deployBatchContracts,
+  deployContract,
+} from '../../services/deployService.js';
 import { rateLimitMiddleware } from '../../middleware/rateLimiter.js';
 import { validateRequest } from '../../middleware/validation.js';
 import {
@@ -86,11 +89,13 @@ router.post(
       return res.json({
         success: true,
         batch_id: result.batchId,
-        deployments: (result.deployments || result.contracts || []).map((d) => ({
-          contract_id: d.contractId,
-          contract_name: d.contractName,
-          status: d.status,
-        })),
+        deployments: (result.deployments || result.contracts || []).map(
+          (d) => ({
+            contract_id: d.contractId,
+            contract_name: d.contractName,
+            status: d.status,
+          })
+        ),
       });
     } catch (error) {
       return next(

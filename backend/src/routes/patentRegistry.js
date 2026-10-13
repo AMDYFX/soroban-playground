@@ -82,8 +82,7 @@ router.get('/patents', async (req, res) => {
       owner: typeof owner === 'string' ? owner : '',
       verified:
         verified === 'true' ? true : verified === 'false' ? false : undefined,
-      listed:
-        listed === 'true' ? true : listed === 'false' ? false : undefined,
+      listed: listed === 'true' ? true : listed === 'false' ? false : undefined,
       sort: typeof sort === 'string' ? sort : 'recent',
       order: order === 'asc' ? 'asc' : 'desc',
       page: clampLimit(page, 1, 10000),
@@ -315,163 +314,181 @@ router.patch('/patents/:patent_id/licenses/:license_id', async (req, res) => {
 });
 
 // Escrow funding — licensee deposits funds into escrow before acceptance.
-Router.post('/patents/:patent_id/licenses/:license_id/escrow', async (req, res) => {
-  const actor = actorFrom(req);
-  const errors = [];
+Router.post(
+  '/patents/:patent_id/licenses/:license_id/escrow',
+  async (req, res) => {
+    const actor = actorFrom(req);
+    const errors = [];
 
-  if (!actor) errors.push('actor is required');
-  if (!isText(req.body?.payment_reference))
-    errors.push('payment_reference is required');
+    if (!actor) errors.push('actor is required');
+    if (!isText(req.body?.payment_reference))
+      errors.push('payment_reference is required');
 
-  if (errors.length > 0) {
-    return errorResponse(res, 400, 'Validation failed', errors);
+    if (errors.length > 0) {
+      return errorResponse(res, 400, 'Validation failed', errors);
+    }
+
+    try {
+      const license = patentRegistryService.fundEscrow(
+        actor,
+        Number(req.params.patent_id),
+        Number(req.params.license_id),
+        req.body.payment_reference.trim()
+      );
+
+      return res.json({
+        success: true,
+        status: 'success',
+        message: 'Escrow funded successfully',
+        data: license,
+      });
+    } catch (error) {
+      return errorResponse(
+        res,
+        error.message === 'Unauthorized' ? 403 : 500,
+        error.message
+      );
+    }
   }
-
-  try {
-    const license = patentRegistryService.fundEscrow(
-      actor,
-      Number(req.params.patent_id),
-      Number(req.params.license_id),
-      req.body.payment_reference.trim()
-    );
-
-    return res.json({
-      success: true,
-      status: 'success',
-      message: 'Escrow funded successfully',
-      data: license,
-    });
-  } catch (error) {
-    return errorResponse(
-      res,
-      error.message === 'Unauthorized' ? 403 : 500,
-      error.message
-    );
-  }
-});
+);
 
 // Escrow release — patent owner confirms delivery and releases funds.
-Router.post('/patents/:patent_id/licenses/:license_id/escrow/release', async (req, res) => {
-  const actor = actorFrom(req);
+Router.post(
+  '/patents/:patent_id/licenses/:license_id/escrow/release',
+  async (req, res) => {
+    const actor = actorFrom(req);
 
-  if (!actor) {
-    return errorResponse(res, 400, 'Validation failed', ['actor is required']);
+    if (!actor) {
+      return errorResponse(res, 400, 'Validation failed', [
+        'actor is required',
+      ]);
+    }
+
+    try {
+      const license = patentRegistryService.releaseEscrow(
+        actor,
+        Number(req.params.patent_id),
+        Number(req.params.license_id)
+      );
+
+      return res.json({
+        success: true,
+        status: 'success',
+        message: 'Escrow released successfully',
+        data: license,
+      });
+    } catch (error) {
+      return errorResponse(
+        res,
+        error.message === 'Unauthorized' ? 403 : 500,
+        error.message
+      );
+    }
   }
-
-  try {
-    const license = patentRegistryService.releaseEscrow(
-      actor,
-      Number(req.params.patent_id),
-      Number(req.params.license_id)
-    );
-
-    return res.json({
-      success: true,
-      status: 'success',
-      message: 'Escrow released successfully',
-      data: license,
-    });
-  } catch (error) {
-    return errorResponse(
-      res,
-      error.message === 'Unauthorized' ? 403 : 500,
-      error.message
-    );
-  }
-});
+);
 
 // Escrow refund — licensee can refund funds if offer expired or disputed.
-Router.post('/patents/:patent_id/licenses/:license_id/escrow/refund', async (req, res) => {
-  const actor = actorFrom(req);
+Router.post(
+  '/patents/:patent_id/licenses/:license_id/escrow/refund',
+  async (req, res) => {
+    const actor = actorFrom(req);
 
-  if (!actor) {
-    return errorResponse(res, 400, 'Validation failed', ['actor is required']);
+    if (!actor) {
+      return errorResponse(res, 400, 'Validation failed', [
+        'actor is required',
+      ]);
+    }
+
+    try {
+      const license = patentRegistryService.refundEscrow(
+        actor,
+        Number(req.params.patent_id),
+        Number(req.params.license_id)
+      );
+
+      return res.json({
+        success: true,
+        status: 'success',
+        message: 'Escrow refunded successfully',
+        data: license,
+      });
+    } catch (error) {
+      return errorResponse(
+        res,
+        error.message === 'Unauthorized' ? 403 : 500,
+        error.message
+      );
+    }
   }
-
-  try {
-    const license = patentRegistryService.refundEscrow(
-      actor,
-      Number(req.params.patent_id),
-      Number(req.params.license_id)
-    );
-
-    return res.json({
-      success: true,
-      status: 'success',
-      message: 'Escrow refunded successfully',
-      data: license,
-    });
-  } catch (error) {
-    return errorResponse(
-      res,
-      error.message === 'Unauthorized' ? 403 : 500,
-      error.message
-    );
-  }
-});
+);
 
 // -----------------------------------------------------------------------------
 // Dispute dashboard flows
 // -----------------------------------------------------------------------------
 
-router.post('/patents/:patent_id/licenses/:license_id/disputes', async (req, res) => {
-  const actor = actorFrom(req);
-  const errors = [];
+router.post(
+  '/patents/:patent_id/licenses/:license_id/disputes',
+  async (req, res) => {
+    const actor = actorFrom(req);
+    const errors = [];
 
-  if (!actor) errors.push('actor is required');
-  if (!isText(req.body?.reason)) errors.push('reason is required');
+    if (!actor) errors.push('actor is required');
+    if (!isText(req.body?.reason)) errors.push('reason is required');
 
-  if (errors.length > 0) {
-    return errorResponse(res, 400, 'Validation failed', errors);
+    if (errors.length > 0) {
+      return errorResponse(res, 400, 'Validation failed', errors);
+    }
+
+    try {
+      const dispute = patentRegistryService.openDispute(
+        actor,
+        Number(req.params.patent_id),
+        Number(req.params.license_id),
+        req.body.reason.trim()
+      );
+
+      return res.status(201).json({
+        success: true,
+        status: 'success',
+        message: 'Dispute opened successfully',
+        data: dispute,
+      });
+    } catch (error) {
+      return errorResponse(
+        res,
+        error.message === 'Unauthorized' ? 403 : 500,
+        error.message
+      );
+    }
   }
+);
 
-  try {
-    const dispute = patentRegistryService.openDispute(
-      actor,
-      Number(req.params.patent_id),
-      Number(req.params.license_id),
-      req.body.reason.trim()
-    );
-
-    return res.status(201).json({
-      success: true,
-      status: 'success',
-      message: 'Dispute opened successfully',
-      data: dispute,
-    });
-  } catch (error) {
-    return errorResponse(
-      res,
-      error.message === 'Unauthorized' ? 403 : 500,
-      error.message
-    );
+router.get(
+  '/patents/:patent_id/licenses/:license_id/disputes',
+  async (req, res) => {
+    try {
+      const disputes = patentRegistryService.getDisputesByLicense(
+        Number(req.params.patent_id),
+        Number(req.params.license_id)
+      );
+      return res.json({
+        success: true,
+        status: 'success',
+        message: 'Disputes loaded',
+        data: disputes,
+      });
+    } catch (error) {
+      return errorResponse(res, 500, error.message);
+    }
   }
-});
-
-router.get('/patents/:patent_id/licenses/:license_id/disputes', async (req, res) => {
-  try {
-    const disputes = patentRegistryService.getDisputesByLicense(
-      Number(req.params.patent_id),
-      Number(req.params.license_id)
-    );
-    return res.json({
-      success: true,
-      status: 'success',
-      message: 'Disputes loaded',
-      data: disputes,
-    });
-  } catch (error) {
-    return errorResponse(res, 500, error.message);
-  }
-});
+);
 
 router.patch('/disputes/:dispute_id', async (req, res) => {
   const actor = actorFrom(req);
   const errors = [];
 
   if (!actor) errors.push('actor is required');
-  if (!isText(req.body?.resolution))
-    errors.push('resolution is required');
+  if (!isText(req.body?.resolution)) errors.push('resolution is required');
   if (!isText(req.body?.status)) errors.push('status is required');
 
   if (errors.length > 0) {
@@ -576,7 +593,9 @@ router.get('/licenses', async (req, res) => {
       status: typeof status === 'string' ? status : '',
       licensee: typeof licensee === 'string' ? licensee : '',
       licensor: typeof licensor === 'string' ? licensor : '',
-      patentId: Number.isFinite(Number(patentId)) ? Number(patentId) : undefined,
+      patentId: Number.isFinite(Number(patentId))
+        ? Number(patentId)
+        : undefined,
       page: clampLimit(page, 1, 10000),
       limit: clampLimit(limit, 20, 100),
     });

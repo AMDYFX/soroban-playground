@@ -13,9 +13,7 @@ const _dirname = path.dirname(_filename);
 const ALL_MIGRATIONS_DIR = path.resolve(_dirname, '../src/database/migrations');
 
 function createTempMigrationsDir() {
-  const tmpDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), 'knex-startup-test-')
-  );
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'knex-startup-test-'));
   const files = fs
     .readdirSync(ALL_MIGRATIONS_DIR)
     .filter((f) => f.startsWith('20260701') && f.endsWith('.js'));

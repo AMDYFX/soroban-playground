@@ -27,7 +27,11 @@ impl TickBitmap {
         Ok(())
     }
 
-    pub fn set_tick_initialized(&mut self, tick: i32, initialized: bool) -> Result<(), crate::Error> {
+    pub fn set_tick_initialized(
+        &mut self,
+        tick: i32,
+        initialized: bool,
+    ) -> Result<(), crate::Error> {
         self.validate_tick(tick)?;
         if initialized {
             self.initialized_ticks.set(tick, true);
@@ -53,7 +57,7 @@ impl TickBitmap {
         }
 
         let mut current = tick;
-        
+
         if lte {
             while current >= -887272 {
                 if self.initialized_ticks.get(current).unwrap_or(false) {
@@ -94,12 +98,16 @@ mod tests {
         bitmap.set_tick_initialized(-100, true).unwrap();
         bitmap.set_tick_initialized(0, true).unwrap();
         bitmap.set_tick_initialized(100, true).unwrap();
-        
-        let (found, tick) = bitmap.next_initialized_tick_within_one_word(-50, true, 10).unwrap();
+
+        let (found, tick) = bitmap
+            .next_initialized_tick_within_one_word(-50, true, 10)
+            .unwrap();
         assert!(found);
         assert_eq!(tick, -100);
-        
-        let (found, tick) = bitmap.next_initialized_tick_within_one_word(-50, false, 10).unwrap();
+
+        let (found, tick) = bitmap
+            .next_initialized_tick_within_one_word(-50, false, 10)
+            .unwrap();
         assert!(found);
         assert_eq!(tick, 0);
     }

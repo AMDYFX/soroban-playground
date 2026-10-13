@@ -82,9 +82,10 @@ export function broadcastCluster(channel, message) {
 }
 
 // Broadcast a message to all clients across all instances using Redis Pub/Sub default broadcast channel.
-function broadcastGlobal(message) {
+export function broadcast(message) {
   broadcastCluster(REDIS_BROADCAST_CHANNEL, message);
 }
+const broadcastGlobal = broadcast;
 
 function getClientIp(req) {
   const xff = req?.headers?.['x-forwarded-for'];
@@ -332,9 +333,7 @@ export function setupWebSocketServer(httpServer) {
             socket,
             safeStringify({
               type: 'search-updated',
-              pattern: socket.searchRegex
-                ? socket.searchRegex.source
-                : null,
+              pattern: socket.searchRegex ? socket.searchRegex.source : null,
             })
           );
         }
@@ -407,3 +406,8 @@ export function setupWebSocketServer(httpServer) {
   }, HEARTBEAT_INTERVAL_MS);
   activeHeartbeatTimer = heartbeatTimer;
 }
+
+export {
+  setupWebSocketServer as setupWebsocketServer,
+  closeWebSocketServer as closeWebsocketServer,
+};

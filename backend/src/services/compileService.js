@@ -1,7 +1,9 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { EventEmitter } from 'node:events';import { Worker } from 'node:worker_threads';import { LRUCache } from 'lru-cache';
+import { EventEmitter } from 'node:events';
+import { Worker } from 'node:worker_threads';
+import { LRUCache } from 'lru-cache';
 import { buildCargoToml } from '../routes/compile_utils.js';
 import {
   createSpan,
@@ -9,7 +11,8 @@ import {
   addSpanEvent,
   getTraceId,
 } from '../utils/tracing.js';
-import { alertManager } from '../utils/alerting.js';import config from '../config/index.js';
+import { alertManager } from '../utils/alerting.js';
+import config from '../config/index.js';
 import redisService from './redisService.js';
 
 // Cache integration using the shared redisService singleton.

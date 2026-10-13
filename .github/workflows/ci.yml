@@ -261,6 +261,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Seed local secrets for testing
+        run: |
+          cp secrets/postgres_password.example secrets/postgres_password.txt
+          cp secrets/redis_password.example secrets/redis_password.txt
+          cp secrets/postgres_url.example secrets/postgres_url.txt
+
       - name: Validate compose files
         run: |
           docker compose config -q
