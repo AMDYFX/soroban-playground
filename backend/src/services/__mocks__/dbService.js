@@ -24,7 +24,14 @@ export async function getDatabase() {
       for (const candidate of candidates) {
         if (fsSync.existsSync(candidate)) return candidate;
       }
-      return path.join(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', file);
+      return path.join(
+        process.cwd(),
+        '..',
+        'node_modules',
+        'sql.js',
+        'dist',
+        file
+      );
     },
   });
 

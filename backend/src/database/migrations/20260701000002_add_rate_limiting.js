@@ -143,13 +143,18 @@ export async function up(knex) {
       table.timestamp('timestamp').defaultTo(knex.fn.now());
       table.text('metadata').nullable().comment('JSON for additional data');
 
-      table.index(['api_key_id', 'timestamp'], 'idx_audit_log_api_key_timestamp');
+      table.index(
+        ['api_key_id', 'timestamp'],
+        'idx_audit_log_api_key_timestamp'
+      );
       table.index('timestamp', 'idx_audit_log_timestamp');
     });
   }
 
   // Seed default tier limits if table is empty
-  const countRes = await knex('tier_limits').count('* as count').catch(() => [{ count: 0 }]);
+  const countRes = await knex('tier_limits')
+    .count('* as count')
+    .catch(() => [{ count: 0 }]);
   const count = Number(countRes[0]?.count || 0);
   if (count === 0) {
     await knex('tier_limits').insert([
