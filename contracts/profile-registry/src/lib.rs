@@ -1,5 +1,5 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String};
+use soroban_sdk::{contract, contracterror, contractimpl, contracttype, Address, Env, String};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -100,7 +100,7 @@ mod test {
 
         env.mock_all_auths();
 
-        client.set_profile(&user, &name, &bio).unwrap();
+        client.set_profile(&user, &name, &bio);
 
         let profile = client.get_profile(&user).unwrap();
         assert_eq!(profile.name, name);
@@ -131,8 +131,8 @@ mod test {
 
         env.mock_all_auths();
 
-        client.set_profile(&user, &name1, &bio1).unwrap();
-        client.set_profile(&user, &name2, &bio2).unwrap();
+        client.set_profile(&user, &name1, &bio1);
+        client.set_profile(&user, &name2, &bio2);
 
         let profile = client.get_profile(&user).unwrap();
         assert_eq!(profile.name, name2);
@@ -167,10 +167,10 @@ mod test {
 
         env.mock_all_auths();
 
-        client.set_profile(&user, &name, &bio).unwrap();
+        client.set_profile(&user, &name, &bio);
         assert!(client.has_profile(&user));
 
-        client.delete_profile(&user).unwrap();
+        client.delete_profile(&user);
         assert!(!client.has_profile(&user));
         assert!(client.get_profile(&user).is_none());
     }
@@ -203,7 +203,7 @@ mod test {
 
         let name = String::from_str(&env, "Alice");
         let bio = String::from_str(&env, "Dev");
-        client.set_profile(&user, &name, &bio).unwrap();
+        client.set_profile(&user, &name, &bio);
 
         assert!(client.has_profile(&user));
     }

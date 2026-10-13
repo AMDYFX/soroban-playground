@@ -180,6 +180,10 @@ test.describe("playground lifecycle", () => {
       (window as unknown as { __CSP_RELAXED__?: boolean }).__CSP_RELAXED__ = true;
       try {
         window.sessionStorage.setItem("render_warning_seen", "true");
+        window.localStorage.setItem(
+          "soroban.playground.onboarding.v1",
+          JSON.stringify({ completed: true, dismissed: true, step: 0 })
+        );
       } catch {}
     });
   });

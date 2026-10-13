@@ -488,7 +488,7 @@ export async function compile(job) {
   }
   const cargoToml = job.cargoToml || buildCargoToml(job.dependencies || {});
   const result = await executeUnderLock(hash, job.requestId, async () => {
-    return workerPool.run({ ...job, cargoToml, hash });
+    return workerPool.run({ ...job, cargoToml, hash, cacheRoot: CACHE_ROOT });
   });
   if (result?.success) {
     await recordArtifact({ ...result, hash });

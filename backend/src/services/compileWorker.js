@@ -56,9 +56,14 @@ parentPort.on('message', async (job) => {
       env: createSandboxEnv(process.env, sandbox),
       timeoutMs: job.timeoutMs || sandboxDefaults.timeoutMs,
     });
+    const cacheRoot =
+      job.cacheRoot ||
+      process.env.WASM_CACHE_DIR ||
+      path.join(process.cwd(), 'cache', 'wasm');
+    await fs.mkdir(cacheRoot, { recursive: true });
     assertSandboxedOutputPath(sandbox, sandbox.wasmOutPath);
     const wasmPath = sandbox.wasmOutPath;
-    const cachePath = path.join(job.cacheRoot, `${job.hash}.wasm`);
+    const cachePath = path.join(cacheRoot, `${job.hash}.wasm`);
     const stats = await fs.stat(wasmPath);
     await fs.copyFile(wasmPath, cachePath);
 
@@ -79,6 +84,10 @@ parentPort.on('message', async (job) => {
       },
     });
   } catch (error) {
+    const fallbackCacheRoot =
+      job.cacheRoot ||
+      process.env.WASM_CACHE_DIR ||
+      path.join(process.cwd(), 'cache', 'wasm');
     parentPort.postMessage({
       type: 'result',
       payload: {
@@ -89,7 +98,7 @@ parentPort.on('message', async (job) => {
         artifact: {
           name: 'soroban_contract.wasm',
           sizeBytes: 0,
-          path: path.join(job.cacheRoot, `${job.hash}.wasm`),
+          path: path.join(fallbackCacheRoot, `${job.hash}.wasm`),
         },
         logs: error.message.split(/\r?\n/).filter(Boolean),
         memoryPeakBytes: 0,
