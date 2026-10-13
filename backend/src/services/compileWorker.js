@@ -12,6 +12,7 @@ import {
   runSandboxedCargoBuild,
   getSandboxDefaults,
 } from './compileSandbox.js';
+import { buildCargoToml } from '../routes/compile_utils.js';
 
 const sandboxDefaults = getSandboxDefaults();
 
@@ -26,9 +27,10 @@ parentPort.on('message', async (job) => {
   await fs.mkdir(sandbox.cargoTargetDir, { recursive: true });
 
   try {
+    const cargoToml = job.cargoToml || buildCargoToml(job.dependencies || {});
     await fs.writeFile(
       path.join(sandbox.crateRoot, 'Cargo.toml'),
-      job.cargoToml,
+      cargoToml,
       'utf8'
     );
     await fs.writeFile(

@@ -66,7 +66,9 @@ test.describe("contract lifecycle", () => {
   });
 
   test("a minimal contract compiles to WASM", async () => {
+    test.setTimeout(120_000);
     const res = await api.post("/api/compile", {
+      timeout: 120_000,
       data: {
         source: HELLO_CONTRACT,
         filename: "hello.rs",

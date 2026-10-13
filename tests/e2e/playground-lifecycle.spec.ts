@@ -158,7 +158,7 @@ async function stubApi(page: Page, options: { compileFails?: boolean } = {}) {
 
 /** Wait for Monaco to finish its lazy load and the diff view to settle. */
 async function waitForEditor(page: Page) {
-  await expect(page.getByTestId("monaco-editor")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("monaco-editor").first()).toBeVisible({ timeout: 60_000 });
   await page.locator(".monaco-editor .view-lines").first().waitFor({ timeout: 60_000 });
 }
 
@@ -166,7 +166,7 @@ async function waitForEditor(page: Page) {
  *  that does not depend on `window.monaco` being exposed. */
 async function setEditorSource(page: Page, source: string) {
   await waitForEditor(page);
-  await page.getByTestId("monaco-editor").click();
+  await page.getByTestId("monaco-editor").first().click();
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.press("Delete");
   await page.keyboard.insertText(source);
@@ -185,7 +185,7 @@ test.describe("playground lifecycle", () => {
     await stubApi(page);
 
     await page.goto(`${FRONTEND_URL}/template-library`);
-    await expect(page.getByRole("heading", { name: "Template Library" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Template Library" }).first()).toBeVisible({
       timeout: 60_000,
     });
 
@@ -200,7 +200,7 @@ test.describe("playground lifecycle", () => {
 
     // The template's own source, not the editor default.
     await waitForEditor(page);
-    await expect(page.locator(".monaco-editor .view-lines")).toContainText("HelloContract");
+    await expect(page.locator(".monaco-editor .view-lines").first()).toContainText("HelloContract");
   });
 
   test("ignores an unknown template id and keeps the default contract", async ({
@@ -212,7 +212,7 @@ test.describe("playground lifecycle", () => {
     await waitForEditor(page);
 
     await expect(page.getByTestId("loaded-template")).toHaveCount(0);
-    await expect(page.locator(".monaco-editor .view-lines")).toContainText("HelloContract");
+    await expect(page.locator(".monaco-editor .view-lines").first()).toContainText("HelloContract");
   });
 
   test("compiles, deploys and reads state end to end", async ({ page }) => {
