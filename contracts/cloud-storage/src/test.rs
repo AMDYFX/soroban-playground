@@ -1,3 +1,4 @@
+#![allow(unused, clippy::all)]
 extern crate std;
 use std::vec::Vec as StdVec;
 

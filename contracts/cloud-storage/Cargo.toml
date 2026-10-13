@@ -8,6 +8,9 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
+soroban-sdk = "21.0.6"
+
+[dev-dependencies]
 soroban-sdk = { version = "21.0.6", features = ["testutils"] }
 
 [profile.release]

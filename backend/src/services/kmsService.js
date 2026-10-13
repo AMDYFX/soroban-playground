@@ -351,6 +351,13 @@ export class KmsService {
     return this;
   }
 
+  async initialize() {
+    if (this.rotationMs && !this.timer) {
+      this.startRotationLoop(this.rotationMs);
+    }
+    return this;
+  }
+
   stop() {
     if (this.timer) {
       clearInterval(this.timer);

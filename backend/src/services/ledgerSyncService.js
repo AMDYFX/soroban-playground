@@ -147,4 +147,22 @@ export class LedgerSyncService {
       this.timer = null;
     }
   }
+
+  static defaultInstance = null;
+
+  static async start(options = {}) {
+    if (!LedgerSyncService.defaultInstance) {
+      const { getDatabase } = await import('../database/connection.js');
+      const db = getDatabase();
+      LedgerSyncService.defaultInstance = new LedgerSyncService({ db });
+    }
+    return LedgerSyncService.defaultInstance.start(options);
+  }
+
+  static async stop() {
+    if (LedgerSyncService.defaultInstance) {
+      LedgerSyncService.defaultInstance.stop();
+      LedgerSyncService.defaultInstance = null;
+    }
+  }
 }

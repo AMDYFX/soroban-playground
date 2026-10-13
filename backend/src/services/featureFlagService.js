@@ -18,6 +18,11 @@ class FeatureFlagService {
     this.inflightLoad = null;
   }
 
+  async initialize() {
+    this.initSubscriber();
+    await this.loadFlags().catch(() => {});
+  }
+
   initSubscriber() {
     if (
       !redisService.isFallbackMode &&

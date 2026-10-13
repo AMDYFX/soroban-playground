@@ -6,6 +6,7 @@
  */
 
 export async function up(knex) {
+  if (await knex.schema.hasTable('users')) return;
   await knex.schema.createTable('users', (table) => {
     table.increments('id').primary();
     table.string('username', 255).notNullable().unique();

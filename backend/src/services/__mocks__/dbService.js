@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import initSqlJs from 'sql.js';
 
@@ -15,8 +16,16 @@ export async function getDatabase() {
   if (db) return db;
 
   const SQL = await initSqlJs({
-    locateFile: (file) =>
-      path.join(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', file),
+    locateFile: (file) => {
+      const candidates = [
+        path.join(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', file),
+        path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file),
+      ];
+      for (const candidate of candidates) {
+        if (fsSync.existsSync(candidate)) return candidate;
+      }
+      return path.join(process.cwd(), '..', 'node_modules', 'sql.js', 'dist', file);
+    },
   });
 
   dbPath = process.env.MIGRATION_DB_PATH || DEFAULT_DB_PATH;

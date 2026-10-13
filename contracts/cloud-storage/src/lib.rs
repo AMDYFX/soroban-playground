@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(unused, dead_code, clippy::all)]
 
 mod storage;
 #[cfg(test)]
