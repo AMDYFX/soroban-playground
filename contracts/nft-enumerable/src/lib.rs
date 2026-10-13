@@ -212,7 +212,7 @@ impl NftEnumerable {
         if index >= len {
             return Err(Error::IndexOutOfBounds);
         }
-        Ok(tokens[index as usize])
+        tokens.get(index as u32).ok_or(Error::IndexOutOfBounds)
     }
 
     /// Returns the number of tokens owned by `owner`.
@@ -227,7 +227,7 @@ impl NftEnumerable {
         if index >= len {
             return Err(Error::IndexOutOfBounds);
         }
-        Ok(tokens[index as usize])
+        tokens.get(index as u32).ok_or(Error::IndexOutOfBounds)
     }
 }
 

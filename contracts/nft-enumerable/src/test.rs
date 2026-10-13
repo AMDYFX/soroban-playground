@@ -143,9 +143,9 @@ fn test_burn_first_token_shifts_last_to_front_global() {
     let at0 = client.token_by_index(&0);
     let at1 = client.token_by_index(&1);
     // The set of remaining tokens must be exactly {id1, id2}.
-    let mut remaining = soroban_sdk::vec![&env, at0, at1];
+    let mut remaining = [at0, at1];
     remaining.sort();
-    let mut expected = soroban_sdk::vec![&env, id1, id2];
+    let mut expected = [id1, id2];
     expected.sort();
     assert_eq!(remaining, expected);
 
@@ -170,9 +170,9 @@ fn test_burn_middle_token_shifts_last_in_global() {
     assert_eq!(client.total_supply(), 2);
     let at0 = client.token_by_index(&0);
     let at1 = client.token_by_index(&1);
-    let mut remaining = soroban_sdk::vec![&env, at0, at1];
+    let mut remaining = [at0, at1];
     remaining.sort();
-    let mut expected = soroban_sdk::vec![&env, id0, id2];
+    let mut expected = [id0, id2];
     expected.sort();
     assert_eq!(remaining, expected);
 }
@@ -235,9 +235,9 @@ fn test_burn_first_owner_token_shifts_index() {
     assert_eq!(client.balance_of(&user), 2);
     let at0 = client.token_of_owner_by_index(&user, &0);
     let at1 = client.token_of_owner_by_index(&user, &1);
-    let mut remaining = soroban_sdk::vec![&env, at0, at1];
+    let mut remaining = [at0, at1];
     remaining.sort();
-    let mut expected = soroban_sdk::vec![&env, id1, id2];
+    let mut expected = [id1, id2];
     expected.sort();
     assert_eq!(remaining, expected);
 }
