@@ -25,6 +25,7 @@ import {
 import dynamic from "next/dynamic";
 import MobileEditor from "@/components/MobileEditor";
 import { preloadMonacoEditor } from "@/lib/editorLoadScheduler";
+import { findTemplate } from "@/lib/templates";
 
 const Editor = dynamic(() => import("@/components/Editor"), {
   ssr: false,
@@ -302,6 +303,24 @@ export default function Home() {
   }, []);
 
   const [code, setCode] = useState(DEFAULT_CODE);
+  const [loadedTemplateId, setLoadedTemplateId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const template = findTemplate(params.get("template"));
+
+    if (!template) {
+      return;
+    }
+
+    setCode(template.code);
+    setLoadedTemplateId(template.id);
+    setLogs((previous) => [
+      ...previous,
+      `Loaded template "${template.name}" into the editor.`,
+    ]);
+  }, []);
   const [formatDiagnostics, setFormatDiagnostics] =
     useState<RustFormatDiagnostic[]>([]);
   const [isFormatting, setIsFormatting] = useState(false);
@@ -2499,6 +2518,14 @@ export default function Home() {
                     <p className="mt-1 text-sm text-slate-300">
                       Edit `lib.rs`, then compile against the backend toolchain.
                     </p>
+                    {loadedTemplateId ? (
+                      <p
+                        data-testid="loaded-template"
+                        className="mt-1 text-xs text-cyan-300"
+                      >
+                        Loaded from template: {loadedTemplateId}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2">
                     <button

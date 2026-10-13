@@ -3,8 +3,7 @@
 mod test;
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, Map, String,
-    Symbol, Val, Vec,
+    contract, contracterror, contractimpl, symbol_short, Address, Env, String, Symbol, Val, Vec,
 };
 
 const ADMIN: Symbol = symbol_short!("ADMIN");
@@ -61,6 +60,7 @@ fn ensure_initialized(env: &Env) -> Result<(), Error> {
     Ok(())
 }
 
+#[allow(dead_code)]
 fn is_valid_name_char(c: u8) -> bool {
     (c >= b'a' && c <= b'z') || (c >= b'A' && c <= b'Z') || (c >= b'0' && c <= b'9') || c == b'-'
 }
@@ -379,6 +379,14 @@ impl CrossContractUtils {
         fn_name: String,
         args: Vec<Val>,
     ) -> Result<Val, Error> {
-        Ok(env.invoke_contract(&contract, &fn_name, args))
+        let len = fn_name.len() as usize;
+        if len == 0 || len > 32 {
+            return Err(Error::InvalidInput);
+        }
+        let mut buf = [0u8; 32];
+        fn_name.copy_into_slice(&mut buf[..len]);
+        let sym_str = core::str::from_utf8(&buf[..len]).map_err(|_| Error::InvalidInput)?;
+        let sym = Symbol::new(env, sym_str);
+        Ok(env.invoke_contract(&contract, &sym, args))
     }
 }

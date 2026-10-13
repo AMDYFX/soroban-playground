@@ -233,7 +233,7 @@ test.describe("playground lifecycle", () => {
     await expect(compileButton).toBeEnabled();
     await compileButton.click();
 
-    await expect(page.getByText(/Compiled successfully/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/Compiled successfully/).first()).toBeVisible({ timeout: 30_000 });
     expect(calls.compile).toBe(1);
     expect(calls.lastCompileBody?.code).toContain("CounterContract");
 
@@ -264,7 +264,7 @@ test.describe("playground lifecycle", () => {
 
     await page.getByRole("button", { name: "Compile", exact: true }).click();
 
-    await expect(page.getByText(/expected `env` parameter/)).toBeVisible({
+    await expect(page.getByText(/expected `env` parameter/).first()).toBeVisible({
       timeout: 30_000,
     });
     expect(calls.compile).toBe(1);
@@ -283,7 +283,7 @@ test.describe("playground lifecycle", () => {
     await setEditorSource(page, EDITED_CONTRACT);
 
     await page.getByRole("button", { name: "Compile", exact: true }).click();
-    await expect(page.getByText(/Compiled successfully/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/Compiled successfully/).first()).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole("button", { name: "Deploy to Testnet" }).click();
     await expect(page.getByText(CONTRACT_ID)).toBeVisible({ timeout: 30_000 });
