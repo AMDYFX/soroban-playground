@@ -1,8 +1,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Symbol, Vec,
-    U256,
+    contract, contractimpl, contracttype, symbol_short, Address, Bytes, Env, String, Symbol, Vec,
 };
 
 /// Simulation state for tracking mock environment conditions
@@ -24,7 +23,7 @@ pub struct MockTransaction {
     pub from: Address,
     pub to: Address,
     pub amount: u128,
-    pub data: Vec<u8>,
+    pub data: Bytes,
     pub status: u32, // 0: pending, 1: success, 2: failed
 }
 
@@ -50,7 +49,9 @@ pub struct SimulationConfig {
 }
 
 const SIMULATION_STATE: Symbol = symbol_short!("SIM_STATE");
+#[allow(dead_code)]
 const MOCK_TRANSACTIONS: Symbol = symbol_short!("MOCK_TXN");
+#[allow(dead_code)]
 const SIMULATION_RESULTS: Symbol = symbol_short!("SIM_RES");
 const SIMULATION_CONFIG: Symbol = symbol_short!("SIM_CFG");
 const TRANSACTION_COUNTER: Symbol = symbol_short!("TXN_CNT");
@@ -105,7 +106,7 @@ impl SimulationEngine {
         from: Address,
         to: Address,
         amount: u128,
-        data: Vec<u8>,
+        data: Bytes,
     ) -> u32 {
         let mut counter: u32 = env
             .storage()
@@ -124,7 +125,7 @@ impl SimulationEngine {
             status: 0, // pending
         };
 
-        let key = Symbol::new(&env, &format!("TXN_{}", counter));
+        let key = (symbol_short!("TXN"), counter);
         env.storage().instance().set(&key, &tx);
         env.storage().instance().set(&TRANSACTION_COUNTER, &counter);
 
@@ -133,7 +134,7 @@ impl SimulationEngine {
 
     /// Execute a mock transaction and return simulation result
     pub fn execute_mock_transaction(env: Env, tx_id: u32) -> SimulationResult {
-        let key = Symbol::new(&env, &format!("TXN_{}", tx_id));
+        let key = (symbol_short!("TXN"), tx_id);
 
         let mut tx: MockTransaction = match env.storage().instance().get(&key) {
             Some(t) => t,
@@ -143,7 +144,7 @@ impl SimulationEngine {
                     gas_used: 0,
                     execution_time_ms: 0,
                     state_changes: 0,
-                    error_message: String::from_slice(&env, "Transaction not found"),
+                    error_message: String::from_str(&env, "Transaction not found"),
                 }
             }
         };
@@ -162,7 +163,7 @@ impl SimulationEngine {
 
         // Simulate transaction execution
         let gas_used = Self::calculate_gas_usage(&env, &tx);
-        let mut state = Self::get_state(&env);
+        let mut state = Self::get_state(env.clone());
 
         let success = if gas_used <= config.max_gas && state.gas_available >= gas_used {
             state.gas_available -= gas_used;
@@ -184,16 +185,16 @@ impl SimulationEngine {
             execution_time_ms,
             state_changes: if success { 1 } else { 0 },
             error_message: if success {
-                String::from_slice(&env, "")
+                String::from_str(&env, "")
             } else {
-                String::from_slice(&env, "Insufficient gas or state")
+                String::from_str(&env, "Insufficient gas or state")
             },
         }
     }
 
     /// Get mock transaction details
     pub fn get_mock_transaction(env: Env, tx_id: u32) -> MockTransaction {
-        let key = Symbol::new(&env, &format!("TXN_{}", tx_id));
+        let key = (symbol_short!("TXN"), tx_id);
         env.storage()
             .instance()
             .get(&key)
@@ -202,7 +203,7 @@ impl SimulationEngine {
                 from: env.current_contract_address(),
                 to: env.current_contract_address(),
                 amount: 0,
-                data: Vec::new(&env),
+                data: Bytes::new(&env),
                 status: 0,
             })
     }
@@ -224,7 +225,7 @@ impl SimulationEngine {
             return false;
         }
 
-        let mut state = Self::get_state(&env);
+        let mut state = Self::get_state(env.clone());
         state.timestamp = env.ledger().timestamp();
 
         env.storage().instance().set(&key, &value);
@@ -235,7 +236,7 @@ impl SimulationEngine {
 
     /// Reset simulation to initial state
     pub fn reset_simulation(env: Env) {
-        let caller = Self::get_state(&env).caller;
+        let caller = Self::get_state(env.clone()).caller;
 
         let state = SimulationState {
             is_active: true,
@@ -275,7 +276,7 @@ impl SimulationEngine {
     }
 
     /// Calculate gas usage for a transaction (mock calculation)
-    fn calculate_gas_usage(env: &Env, tx: &MockTransaction) -> u64 {
+    fn calculate_gas_usage(_env: &Env, tx: &MockTransaction) -> u64 {
         let base_gas = 21_000u64;
         let data_gas = (tx.data.len() as u64) * 16;
         let amount_gas = if tx.amount > 0 { 9_000 } else { 0 };
@@ -288,7 +289,7 @@ impl SimulationEngine {
         let mut results = Vec::new(&env);
 
         for tx_id in tx_ids.iter() {
-            let result = Self::execute_mock_transaction(&env, tx_id);
+            let result = Self::execute_mock_transaction(env.clone(), tx_id);
             results.push_back(result);
         }
 
@@ -297,7 +298,7 @@ impl SimulationEngine {
 
     /// Get simulation metrics
     pub fn get_metrics(env: Env) -> (u64, u32, u64) {
-        let state = Self::get_state(&env);
+        let state = Self::get_state(env.clone());
         let counter: u32 = env
             .storage()
             .instance()
@@ -311,14 +312,16 @@ impl SimulationEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::testutils::Address as TestAddress;
+    use soroban_sdk::testutils::Address as _;
 
     #[test]
     fn test_init() {
         let env = soroban_sdk::Env::default();
-        let caller = TestAddress::random(&env);
+        let contract_id = env.register_contract(None, SimulationEngine);
+        let client = SimulationEngineClient::new(&env, &contract_id);
+        let caller = Address::generate(&env);
 
-        let state = SimulationEngine::init(env.clone(), caller.clone());
+        let state = client.init(&caller);
 
         assert!(state.is_active);
         assert_eq!(state.gas_available, 1_000_000);
@@ -327,14 +330,15 @@ mod tests {
     #[test]
     fn test_create_mock_transaction() {
         let env = soroban_sdk::Env::default();
-        let caller = TestAddress::random(&env);
-        let from = TestAddress::random(&env);
-        let to = TestAddress::random(&env);
+        let contract_id = env.register_contract(None, SimulationEngine);
+        let client = SimulationEngineClient::new(&env, &contract_id);
+        let caller = Address::generate(&env);
+        let from = Address::generate(&env);
+        let to = Address::generate(&env);
 
-        SimulationEngine::init(env.clone(), caller);
+        client.init(&caller);
 
-        let tx_id =
-            SimulationEngine::create_mock_transaction(env.clone(), from, to, 1000, Vec::new(&env));
+        let tx_id = client.create_mock_transaction(&from, &to, &1000, &Bytes::new(&env));
 
         assert_eq!(tx_id, 1);
     }
@@ -342,16 +346,17 @@ mod tests {
     #[test]
     fn test_execute_mock_transaction() {
         let env = soroban_sdk::Env::default();
-        let caller = TestAddress::random(&env);
-        let from = TestAddress::random(&env);
-        let to = TestAddress::random(&env);
+        let contract_id = env.register_contract(None, SimulationEngine);
+        let client = SimulationEngineClient::new(&env, &contract_id);
+        let caller = Address::generate(&env);
+        let from = Address::generate(&env);
+        let to = Address::generate(&env);
 
-        SimulationEngine::init(env.clone(), caller);
+        client.init(&caller);
 
-        let tx_id =
-            SimulationEngine::create_mock_transaction(env.clone(), from, to, 1000, Vec::new(&env));
+        let tx_id = client.create_mock_transaction(&from, &to, &1000, &Bytes::new(&env));
 
-        let result = SimulationEngine::execute_mock_transaction(env.clone(), tx_id);
+        let result = client.execute_mock_transaction(&tx_id);
 
         assert!(result.success);
         assert!(result.gas_used > 0);
