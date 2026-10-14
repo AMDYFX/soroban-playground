@@ -742,7 +742,9 @@ export default function Home() {
       });
 
       setContractId(payload.contractId);
-      setContractAbi([]);
+      setContractAbi((prev) =>
+        prev.length > 0 ? prev : parseContractAbiFromSource(code),
+      );
       setLastDeployMessage(payload.message);
       const deployedStorage: LedgerState = {
         contractName: payload.contractName,

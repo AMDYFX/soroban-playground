@@ -251,7 +251,7 @@ test.describe("playground lifecycle", () => {
     const storage = page.getByRole("heading", { name: "Contract Storage" });
     await expect(storage).toBeVisible();
 
-    const storagePanel = page.locator("div").filter({ has: storage }).last();
+    const storagePanel = page.locator("div").filter({ has: storage }).first();
     await expect(storagePanel).toContainText("count");
     await expect(storagePanel).toContainText("Contract Storage");
   });
