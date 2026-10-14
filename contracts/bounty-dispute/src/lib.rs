@@ -1,6 +1,8 @@
 //! Bounty Dispute Contract — escrow + commit-reveal + arbitrator bonds.
 // AUTARCH implementation for StellarDevHub#1393.
 
+#![no_std]
+
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, Address, Bytes, Env, Map, Vec,
 };

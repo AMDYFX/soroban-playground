@@ -1,4 +1,6 @@
 // contracts/vesting_pool/src/lib.rs
+#![no_std]
+
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Vec};
 
 #[contracttype]
@@ -41,8 +43,8 @@ impl MilestoneVestingPoolContract {
         }
 
         let schedule = VestingSchedule {
-            beneficiary,
-            issuer,
+            beneficiary: beneficiary.clone(),
+            issuer: issuer.clone(),
             tranches,
         };
         env.storage().persistent().set(&key, &schedule);
