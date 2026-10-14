@@ -1,6 +1,9 @@
-#![no_std]
+extern crate alloc;
 
-use soroban_sdk::{Address, Env, String, Vec, I128, U128, U256};
+use alloc::boxed::Box;
+#[cfg(any(test, feature = "testutils"))]
+use soroban_sdk::testutils::Address as _;
+use soroban_sdk::{Address, Env, IntoVal, String, TryFromVal, Val, Vec};
 
 /// Result for property test execution
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,13 +26,14 @@ impl<'a> PropertyTester<'a> {
     pub fn test<F, I>(&self, inputs: Vec<I>, property: F) -> PropertyTestResult
     where
         F: Fn(&I) -> Result<(), String>,
+        I: IntoVal<Env, Val> + TryFromVal<Env, Val> + Clone,
     {
         let mut failures = Vec::new(self.env);
         let mut count = 0u64;
 
         for input in inputs.iter() {
             count += 1;
-            if let Err(e) = property(input) {
+            if let Err(e) = property(&input) {
                 failures.push_back(e);
             }
         }
@@ -49,6 +53,7 @@ impl<'a> PropertyTester<'a> {
     ) -> PropertyTestResult
     where
         F: Fn(&I) -> Result<(), String>,
+        I: IntoVal<Env, Val> + TryFromVal<Env, Val> + Clone,
     {
         let mut failures = Vec::new(self.env);
         let mut count = 0u64;
@@ -58,7 +63,7 @@ impl<'a> PropertyTester<'a> {
                 break;
             }
             count += 1;
-            if let Err(e) = property(input) {
+            if let Err(e) = property(&input) {
                 failures.push_back(e);
             }
         }
@@ -74,14 +79,14 @@ impl<'a> PropertyTester<'a> {
 /// InvariantChecker - tracks and verifies state invariants
 pub struct InvariantChecker<'a> {
     env: &'a Env,
-    invariants: Vec<(&'static str, Box<dyn Fn() -> Result<(), String> + 'a>)>,
+    invariants: std::vec::Vec<(&'static str, Box<dyn Fn() -> Result<(), String> + 'a>)>,
 }
 
 impl<'a> InvariantChecker<'a> {
     pub fn new(env: &'a Env) -> Self {
         Self {
             env,
-            invariants: Vec::new(env),
+            invariants: std::vec::Vec::new(),
         }
     }
 
@@ -89,15 +94,15 @@ impl<'a> InvariantChecker<'a> {
     where
         F: Fn() -> Result<(), String> + 'a,
     {
-        self.invariants.push_back((name, Box::new(invariant)));
+        self.invariants.push((name, Box::new(invariant)));
     }
 
     pub fn check_all(&self) -> Result<(), Vec<String>> {
         let mut errors = Vec::new(self.env);
 
         for (name, inv) in self.invariants.iter() {
-            if let Err(e) = inv() {
-                errors.push_back(String::from_str(self.env, &format!("{}: {}", name, e)));
+            if let Err(_e) = inv() {
+                errors.push_back(String::from_str(self.env, name));
             }
         }
 
@@ -128,11 +133,11 @@ impl<'a> BoundaryTester<'a> {
         Self { env }
     }
 
-    pub fn test_i128_boundaries<F>(&self, f: F) -> Vec<(i128, Result<(), String>)>
+    pub fn test_i128_boundaries<F>(&self, f: F) -> std::vec::Vec<(i128, Result<(), String>)>
     where
         F: Fn(i128) -> Result<(), String>,
     {
-        let mut results = Vec::new(self.env);
+        let mut results = std::vec::Vec::new();
         let test_values = [
             i128::MIN,
             i128::MIN + 1,
@@ -146,21 +151,21 @@ impl<'a> BoundaryTester<'a> {
         ];
 
         for &v in &test_values {
-            results.push_back((v, f(v)));
+            results.push((v, f(v)));
         }
 
         results
     }
 
-    pub fn test_u128_boundaries<F>(&self, f: F) -> Vec<(u128, Result<(), String>)>
+    pub fn test_u128_boundaries<F>(&self, f: F) -> std::vec::Vec<(u128, Result<(), String>)>
     where
         F: Fn(u128) -> Result<(), String>,
     {
-        let mut results = Vec::new(self.env);
+        let mut results = std::vec::Vec::new();
         let test_values = [u128::MIN, 1, 1000, u128::MAX / 2, u128::MAX - 1, u128::MAX];
 
         for &v in &test_values {
-            results.push_back((v, f(v)));
+            results.push((v, f(v)));
         }
 
         results
@@ -244,15 +249,16 @@ impl<'a> FuzzGenerator<'a> {
 
     pub fn gen_string(&mut self, len_min: u64, len_max: u64) -> String {
         let len = self.gen_u64_range(len_min, len_max) as usize;
-        let mut chars = Vec::new(self.env);
-        let charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+        let charset = b"abcdefghijklmnopqrstuvwxyz0123456789";
+        let mut bytes = std::vec::Vec::with_capacity(len);
 
         for _ in 0..len {
             let idx = self.gen_u64_range(0, charset.len() as u64 - 1) as usize;
-            chars.push_back(charset.as_bytes()[idx] as char);
+            bytes.push(charset[idx]);
         }
 
-        String::from_chars(self.env, chars.iter())
+        let s = core::str::from_utf8(&bytes).unwrap_or("");
+        String::from_str(self.env, s)
     }
 
     pub fn gen_vec_u64(&mut self, len_min: u64, len_max: u64) -> Vec<u64> {
@@ -264,9 +270,10 @@ impl<'a> FuzzGenerator<'a> {
         vec
     }
 
-    pub fn take_n<T, F>(&mut self, n: u64, gen: F) -> Vec<T>
+    pub fn take_n<T, F>(&mut self, n: u64, mut gen: F) -> Vec<T>
     where
-        F: Fn(&mut Self) -> T,
+        F: FnMut(&mut Self) -> T,
+        T: IntoVal<Env, Val> + TryFromVal<Env, Val>,
     {
         let mut vec = Vec::new(self.env);
         for _ in 0..n {
@@ -322,11 +329,14 @@ impl<'a> PropertyValidator<'a> {
         self.assert_true(a >= b, message)
     }
 
-    pub fn validate_all(&self, validations: Vec<Result<(), String>>) -> Result<(), Vec<String>> {
+    pub fn validate_all(
+        &self,
+        validations: std::vec::Vec<Result<(), String>>,
+    ) -> Result<(), Vec<String>> {
         let mut errors = Vec::new(self.env);
-        for v in validations.iter() {
+        for v in validations {
             if let Err(e) = v {
-                errors.push_back(e.clone());
+                errors.push_back(e);
             }
         }
 

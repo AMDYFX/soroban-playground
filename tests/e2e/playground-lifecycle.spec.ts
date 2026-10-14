@@ -201,7 +201,7 @@ test.describe("playground lifecycle", () => {
     await card.getByRole("link", { name: "Open in IDE" }).click();
 
     await expect(page).toHaveURL(/template=hello-world/);
-    await expect(page.getByTestId("loaded-template")).toHaveText(
+    await expect(page.getByTestId("loaded-template").first()).toHaveText(
       /Loaded from template: hello-world/i,
     );
 
@@ -243,8 +243,8 @@ test.describe("playground lifecycle", () => {
 
     // --- deploy ----------------------------------------------------------
     await deployButton.click();
-    await expect(page.getByText("Active Contract ID")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(CONTRACT_ID)).toBeVisible();
+    await expect(page.getByText("Active Contract ID").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(CONTRACT_ID).first()).toBeVisible();
     expect(calls.deploy).toBe(1);
 
     // --- read state ------------------------------------------------------

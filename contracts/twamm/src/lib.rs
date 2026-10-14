@@ -52,7 +52,9 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Vec};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env,
+};
 
 // ─── Fixed-point helpers (18 decimal places) ────────────────────────────────
 
@@ -189,36 +191,20 @@ pub struct PoolState {
 
 // ─── Error type ──────────────────────────────────────────────────────────────
 
-#[contracttype]
-#[derive(Clone, Debug, PartialEq)]
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
 pub enum Error {
-    AlreadyInitialized,
-    NotInitialized,
-    Unauthorized,
-    InvalidAmount,
-    InvalidDuration,
-    OrderNotFound,
-    OrderNotActive,
-    InsufficientLiquidity,
-    Paused,
-    Overflow,
-}
-
-impl From<Error> for soroban_sdk::Error {
-    fn from(e: Error) -> soroban_sdk::Error {
-        soroban_sdk::Error::from_contract_error(match e {
-            Error::AlreadyInitialized => 1,
-            Error::NotInitialized => 2,
-            Error::Unauthorized => 3,
-            Error::InvalidAmount => 4,
-            Error::InvalidDuration => 5,
-            Error::OrderNotFound => 6,
-            Error::OrderNotActive => 7,
-            Error::InsufficientLiquidity => 8,
-            Error::Paused => 9,
-            Error::Overflow => 10,
-        })
-    }
+    AlreadyInitialized = 1,
+    NotInitialized = 2,
+    Unauthorized = 3,
+    InvalidAmount = 4,
+    InvalidDuration = 5,
+    OrderNotFound = 6,
+    OrderNotActive = 7,
+    InsufficientLiquidity = 8,
+    Paused = 9,
+    Overflow = 10,
 }
 
 // ─── Contract struct ─────────────────────────────────────────────────────────

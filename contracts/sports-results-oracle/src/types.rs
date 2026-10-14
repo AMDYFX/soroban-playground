@@ -38,7 +38,7 @@ pub struct DataSource {
 }
 
 #[contracterror]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Error {
     NotInitialized = 1,
     AlreadyInitialized = 2,

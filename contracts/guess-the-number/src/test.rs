@@ -84,7 +84,7 @@ fn test_wrong_guess_decrements_remaining() {
     let (env, _, client) = setup(3);
     let player = Address::generate(&env);
     let result = client.guess(&player, &wrong_hash(&env));
-    assert_eq!(result, GameResult::Wrong { guesses_left: 2 });
+    assert_eq!(result, GameResult::Wrong(2));
     assert_eq!(client.guesses_remaining(), 2);
     assert_eq!(client.guess_count(), 1);
 }
@@ -126,7 +126,7 @@ fn test_reset_allows_new_round() {
     client.reset(&admin, &new_hash, &3);
     // Old solution no longer works.
     let result = client.guess(&player, &correct_hash(&env));
-    assert_eq!(result, GameResult::Wrong { guesses_left: 2 });
+    assert_eq!(result, GameResult::Wrong(2));
     // New hash works.
     let result = client.guess(&player, &new_hash);
     assert_eq!(result, GameResult::Correct);

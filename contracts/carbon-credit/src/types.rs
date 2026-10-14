@@ -47,4 +47,7 @@ pub enum Error {
     InvalidAmount = 7,
     InsufficientBalance = 8,
     RetirementNotFound = 9,
+    IssuerAlreadyVerified = 10,
+    InvalidRecipient = 11,
+    InvalidReasonHash = 12,
 }

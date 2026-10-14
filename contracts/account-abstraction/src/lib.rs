@@ -1,6 +1,5 @@
 #![no_std]
 
-use serde::Deserialize;
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, Address, Bytes, BytesN, Env,
 };
@@ -31,14 +30,47 @@ enum DataKey {
     Challenge,
 }
 
-#[derive(Deserialize)]
-struct ClientData<'a> {
-    #[serde(rename = "type", borrow)]
-    client_type: &'a str,
-    #[serde(borrow)]
-    challenge: &'a str,
-    #[serde(borrow)]
-    origin: &'a str,
+fn find_json_string_value<'a>(json: &'a [u8], key: &[u8]) -> Option<&'a str> {
+    let mut i = 0;
+    while i + key.len() + 2 <= json.len() {
+        if json[i] == b'"'
+            && &json[i + 1..i + 1 + key.len()] == key
+            && json[i + 1 + key.len()] == b'"'
+        {
+            let mut j = i + 1 + key.len() + 1;
+            while j < json.len()
+                && (json[j] == b' ' || json[j] == b'\t' || json[j] == b'\r' || json[j] == b'\n')
+            {
+                j += 1;
+            }
+            if j < json.len() && json[j] == b':' {
+                j += 1;
+                while j < json.len()
+                    && (json[j] == b' ' || json[j] == b'\t' || json[j] == b'\r' || json[j] == b'\n')
+                {
+                    j += 1;
+                }
+                if j < json.len() && json[j] == b'"' {
+                    let val_start = j + 1;
+                    let mut val_end = val_start;
+                    while val_end < json.len() {
+                        if json[val_end] == b'\\' {
+                            val_end += 2;
+                        } else if json[val_end] == b'"' {
+                            break;
+                        } else {
+                            val_end += 1;
+                        }
+                    }
+                    if val_end < json.len() && json[val_end] == b'"' {
+                        return core::str::from_utf8(&json[val_start..val_end]).ok();
+                    }
+                }
+            }
+        }
+        i += 1;
+    }
+    None
 }
 
 #[contract]
@@ -62,7 +94,7 @@ impl AccountAbstraction {
                 return Err(Error::Unauthorized);
             }
         }
-        if public_key.get(0) != Some(0x04) || origin.len() == 0 || origin.len() > MAX_ORIGIN_BYTES {
+        if public_key.get(0) != Some(0x04) || origin.is_empty() || origin.len() > MAX_ORIGIN_BYTES {
             return Err(Error::InvalidInput);
         }
 
@@ -85,7 +117,7 @@ impl AccountAbstraction {
         }
         owner.require_auth();
 
-        if challenge.len() == 0 || challenge.len() > MAX_CHALLENGE_BYTES {
+        if challenge.is_empty() || challenge.len() > MAX_CHALLENGE_BYTES {
             return Err(Error::InvalidInput);
         }
         storage.set(&DataKey::Challenge, &challenge);
@@ -119,13 +151,20 @@ impl AccountAbstraction {
         }
         let mut json_buffer = [0u8; MAX_CLIENT_DATA_JSON_BYTES];
         client_data_json.copy_into_slice(&mut json_buffer[..json_len]);
-        let Ok(client_data) = serde_json::from_slice::<ClientData>(&json_buffer[..json_len]) else {
+        let json_slice = &json_buffer[..json_len];
+        let Some(client_type) = find_json_string_value(json_slice, b"type") else {
+            return false;
+        };
+        let Some(challenge) = find_json_string_value(json_slice, b"challenge") else {
+            return false;
+        };
+        let Some(origin) = find_json_string_value(json_slice, b"origin") else {
             return false;
         };
 
-        if client_data.client_type != "webauthn.get"
-            || Bytes::from_slice(&env, client_data.challenge.as_bytes()) != expected_challenge
-            || Bytes::from_slice(&env, client_data.origin.as_bytes()) != expected_origin
+        if client_type != "webauthn.get"
+            || Bytes::from_slice(&env, challenge.as_bytes()) != expected_challenge
+            || Bytes::from_slice(&env, origin.as_bytes()) != expected_origin
             || authenticator_data.len() < 37
             || authenticator_data.len() > MAX_AUTHENTICATOR_DATA_BYTES
         {

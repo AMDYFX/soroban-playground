@@ -16,7 +16,7 @@ pub enum DataKey {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GameResult {
     Correct,
-    Wrong { guesses_left: u32 },
+    Wrong(u32),
 }
 
 #[contracterror]

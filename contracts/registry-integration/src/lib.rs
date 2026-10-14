@@ -2,7 +2,9 @@
 
 mod test;
 
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol,
+};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -14,15 +16,16 @@ pub struct RegistryEntry {
     pub active: bool,
 }
 
-#[contracttype]
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u32)]
 pub enum Error {
-    AlreadyInitialized = 0,
-    AlreadyRegistered = 1,
-    NotRegistered = 2,
-    Unauthorized = 3,
-    InvalidMetadata = 4,
-    NotActive = 5,
+    AlreadyInitialized = 1,
+    AlreadyRegistered = 2,
+    NotRegistered = 3,
+    Unauthorized = 4,
+    InvalidMetadata = 5,
+    NotActive = 6,
 }
 
 #[contract]
@@ -33,7 +36,7 @@ impl RegistryIntegrationContract {
     /// Initialise the registry integration contract and set the admin.
     pub fn initialize(env: Env, admin: Address) -> Result<(), Error> {
         let admin_key = symbol_short!("admin");
-        if env.storage().persistent().get(&admin_key).is_some() {
+        if env.storage().persistent().has(&admin_key) {
             return Err(Error::AlreadyInitialized);
         }
         admin.require_auth();
@@ -72,7 +75,7 @@ impl RegistryIntegrationContract {
 
         env.storage().persistent().set(&contract_address, &entry);
         env.events().publish(
-            (symbol_short!("registered"), contract_address),
+            (Symbol::new(&env, "registered"), contract_address),
             (caller, metadata),
         );
         Ok(())
@@ -93,8 +96,10 @@ impl RegistryIntegrationContract {
 
         entry.active = false;
         env.storage().persistent().set(&contract_address, &entry);
-        env.events()
-            .publish((symbol_short!("unregistered"), contract_address), caller);
+        env.events().publish(
+            (Symbol::new(&env, "unregistered"), contract_address),
+            caller,
+        );
         Ok(())
     }
 
@@ -145,7 +150,7 @@ impl RegistryIntegrationContract {
         entry.metadata = metadata.clone();
         env.storage().persistent().set(&contract_address, &entry);
         env.events().publish(
-            (symbol_short!("metadata_updated"), contract_address),
+            (Symbol::new(&env, "metadata_updated"), contract_address),
             metadata,
         );
         Ok(())
@@ -158,7 +163,7 @@ impl RegistryIntegrationContract {
     }
 
     fn get_active_entry(env: &Env, contract_address: &Address) -> Option<RegistryEntry> {
-        let entry = env.storage().persistent().get(contract_address)?;
+        let entry: RegistryEntry = env.storage().persistent().get(contract_address)?;
         if entry.active {
             Some(entry)
         } else {

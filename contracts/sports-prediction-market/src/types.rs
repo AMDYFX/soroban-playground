@@ -86,3 +86,13 @@ pub struct BetPosition {
     pub odds_bp: u32, // odds locked at bet time
     pub placed_at: u64,
 }
+
+#[contracttype]
+#[derive(Clone)]
+pub enum DataKey {
+    Admin,
+    Paused,
+    MarketCount,
+    Market(u32),
+    Position(u32, Address),
+}

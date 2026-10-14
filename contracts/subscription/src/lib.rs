@@ -160,7 +160,7 @@ fn set_plan(env: &Env, plan: &Plan) {
 
 fn get_subscription(env: &Env, id: u64) -> Result<Subscription, Error> {
     let key = DataKey::Subscription(id);
-    let subscription = env
+    let subscription: Subscription = env
         .storage()
         .persistent()
         .get(&key)

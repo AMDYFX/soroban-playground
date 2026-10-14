@@ -1,51 +1,33 @@
-use soroban_sdk::{Address, Env, Symbol};
+use soroban_sdk::{Address, Env};
 
-use crate::types::{BetPosition, Error, SportMarket};
-
-const ADMIN_KEY: &str = "admin";
-const PAUSED_KEY: &str = "paused";
-const MARKET_COUNT_KEY: &str = "mkt_cnt";
-
-fn market_key(env: &Env, id: u32) -> Symbol {
-    Symbol::new(env, &format!("sm{}", id))
-}
-
-fn position_key(env: &Env, market_id: u32, bettor: &Address) -> Symbol {
-    let addr = bettor.to_string();
-    let short: &str = if addr.len() >= 6 { &addr[..6] } else { &addr };
-    Symbol::new(env, &format!("bp{}_{}", market_id, short))
-}
+use crate::types::{BetPosition, DataKey, Error, SportMarket};
 
 // ── Admin / pause ─────────────────────────────────────────────────────────────
 
 pub fn is_initialized(env: &Env) -> bool {
-    env.storage().instance().has(&Symbol::new(env, ADMIN_KEY))
+    env.storage().instance().has(&DataKey::Admin)
 }
 
 pub fn set_admin(env: &Env, admin: &Address) {
-    env.storage()
-        .instance()
-        .set(&Symbol::new(env, ADMIN_KEY), admin);
+    env.storage().instance().set(&DataKey::Admin, admin);
 }
 
 pub fn get_admin(env: &Env) -> Result<Address, Error> {
     env.storage()
         .instance()
-        .get(&Symbol::new(env, ADMIN_KEY))
+        .get(&DataKey::Admin)
         .ok_or(Error::NotInitialized)
 }
 
 pub fn is_paused(env: &Env) -> bool {
     env.storage()
         .instance()
-        .get::<Symbol, bool>(&Symbol::new(env, PAUSED_KEY))
+        .get::<DataKey, bool>(&DataKey::Paused)
         .unwrap_or(false)
 }
 
 pub fn set_paused(env: &Env, paused: bool) {
-    env.storage()
-        .instance()
-        .set(&Symbol::new(env, PAUSED_KEY), &paused);
+    env.storage().instance().set(&DataKey::Paused, &paused);
 }
 
 // ── Market count ──────────────────────────────────────────────────────────────
@@ -53,15 +35,13 @@ pub fn set_paused(env: &Env, paused: bool) {
 pub fn get_market_count(env: &Env) -> u32 {
     env.storage()
         .instance()
-        .get(&Symbol::new(env, MARKET_COUNT_KEY))
+        .get(&DataKey::MarketCount)
         .unwrap_or(0u32)
 }
 
 pub fn increment_market_count(env: &Env) -> u32 {
     let count = get_market_count(env) + 1;
-    env.storage()
-        .instance()
-        .set(&Symbol::new(env, MARKET_COUNT_KEY), &count);
+    env.storage().instance().set(&DataKey::MarketCount, &count);
     count
 }
 
@@ -70,13 +50,13 @@ pub fn increment_market_count(env: &Env) -> u32 {
 pub fn set_market(env: &Env, market: &SportMarket) {
     env.storage()
         .persistent()
-        .set(&market_key(env, market.id), market);
+        .set(&DataKey::Market(market.id), market);
 }
 
 pub fn get_market(env: &Env, id: u32) -> Result<SportMarket, Error> {
     env.storage()
         .persistent()
-        .get(&market_key(env, id))
+        .get(&DataKey::Market(id))
         .ok_or(Error::MarketNotFound)
 }
 
@@ -85,11 +65,11 @@ pub fn get_market(env: &Env, id: u32) -> Result<SportMarket, Error> {
 pub fn set_position(env: &Env, pos: &BetPosition) {
     env.storage()
         .persistent()
-        .set(&position_key(env, pos.market_id, &pos.bettor), pos);
+        .set(&DataKey::Position(pos.market_id, pos.bettor.clone()), pos);
 }
 
 pub fn get_position(env: &Env, market_id: u32, bettor: &Address) -> Option<BetPosition> {
     env.storage()
         .persistent()
-        .get(&position_key(env, market_id, bettor))
+        .get(&DataKey::Position(market_id, bettor.clone()))
 }

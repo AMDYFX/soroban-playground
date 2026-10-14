@@ -142,7 +142,7 @@ impl GuessTheNumber {
             let guesses_left = max - new_count;
             env.events()
                 .publish((symbol_short!("wrong"),), (player, guesses_left));
-            Ok(GameResult::Wrong { guesses_left })
+            Ok(GameResult::Wrong(guesses_left))
         }
     }
 

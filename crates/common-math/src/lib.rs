@@ -1,7 +1,5 @@
 #![no_std]
 
-use soroban_sdk::Env;
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MathError {
     Overflow,
@@ -63,6 +61,7 @@ impl FixedPoint {
         Ok(FixedPoint { value, scale })
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn mul(self, other: FixedPoint) -> Result<FixedPoint, MathError> {
         if self.scale != other.scale {
             return Err(MathError::InvalidScale);
@@ -75,6 +74,7 @@ impl FixedPoint {
         FixedPoint::new(final_result, self.scale)
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub fn div(self, other: FixedPoint) -> Result<FixedPoint, MathError> {
         if self.scale != other.scale {
             return Err(MathError::InvalidScale);

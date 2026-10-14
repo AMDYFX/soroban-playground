@@ -17,7 +17,7 @@ fn setup() -> (
     let owner = Address::generate(&env);
     let stranger = Address::generate(&env);
     env.mock_all_auths();
-    client.initialize(&admin).unwrap();
+    client.initialize(&admin);
     (env, client, admin, owner, stranger)
 }
 
@@ -28,9 +28,7 @@ fn register_contract(
     metadata: &str,
 ) {
     let metadata = String::from_str(env, metadata);
-    client
-        .register_with_registry(owner, owner, &metadata)
-        .unwrap();
+    client.register_with_registry(owner, owner, &metadata);
 }
 
 fn update_metadata(
@@ -40,9 +38,7 @@ fn update_metadata(
     metadata: &str,
 ) {
     let metadata = String::from_str(env, metadata);
-    client
-        .set_registry_metadata(owner, owner, &metadata)
-        .unwrap();
+    client.set_registry_metadata(owner, owner, &metadata);
 }
 
 #[test]
@@ -99,7 +95,7 @@ fn test_set_registry_metadata_updates_metadata() {
 fn test_unregister_from_registry_removes_active_entry() {
     let (env, client, _admin, owner, _stranger) = setup();
     register_contract(&env, &client, &owner, "metadata to remove");
-    client.unregister_from_registry(&owner, &owner).unwrap();
+    client.unregister_from_registry(&owner, &owner);
     assert!(client.get_registry_info(&owner).is_none());
     assert!(client.get_registry_metadata(&owner).is_none());
 }
@@ -108,7 +104,7 @@ fn test_unregister_from_registry_removes_active_entry() {
 fn test_revoke_registration_by_admin() {
     let (env, client, admin, owner, _stranger) = setup();
     register_contract(&env, &client, &owner, "registry e2e");
-    client.revoke_registration(&admin, &owner).unwrap();
+    client.revoke_registration(&admin, &owner);
     assert!(client.get_registry_info(&owner).is_none());
 }
 
@@ -116,7 +112,7 @@ fn test_revoke_registration_by_admin() {
 fn test_register_after_unregistration_allows_refresh() {
     let (env, client, _admin, owner, _stranger) = setup();
     register_contract(&env, &client, &owner, "metadata v1");
-    client.unregister_from_registry(&owner, &owner).unwrap();
+    client.unregister_from_registry(&owner, &owner);
     register_contract(&env, &client, &owner, "metadata v2");
     let info = client.get_registry_info(&owner).unwrap();
     assert_eq!(info.metadata, String::from_str(&env, "metadata v2"));
@@ -167,7 +163,7 @@ macro_rules! create_metadata_update_cases {
             fn $name() {
                 let (env, client, _admin, owner, _stranger) = setup();
                 register_contract(&env, &client, &owner, "initial");
-                client.set_registry_metadata(&owner, &owner, &String::from_str(&env, $metadata)).unwrap();
+                client.set_registry_metadata(&owner, &owner, &String::from_str(&env, $metadata));
                 assert_eq!(client.get_registry_metadata(&owner).unwrap(), String::from_str(&env, $metadata));
             }
         )*
@@ -204,7 +200,7 @@ macro_rules! create_unregister_cases {
             fn $name() {
                 let (env, client, _admin, owner, _stranger) = setup();
                 register_contract(&env, &client, &owner, "remove-me");
-                client.unregister_from_registry(&owner, &owner).unwrap();
+                client.unregister_from_registry(&owner, &owner);
                 assert!(client.get_registry_info(&owner).is_none());
                 assert!(client.get_registry_metadata(&owner).is_none());
             }

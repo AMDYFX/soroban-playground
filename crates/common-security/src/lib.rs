@@ -52,7 +52,7 @@ impl ReentrancyGuard {
 
 pub struct AtomicGuard<'a, K: ReentrancyKey> {
     env: &'a Env,
-    _marker: std::marker::PhantomData<K>,
+    _marker: core::marker::PhantomData<K>,
 }
 
 impl<'a, K: ReentrancyKey> AtomicGuard<'a, K> {
@@ -60,7 +60,7 @@ impl<'a, K: ReentrancyKey> AtomicGuard<'a, K> {
         ReentrancyGuard::acquire_lock::<K>(env)?;
         Ok(AtomicGuard {
             env,
-            _marker: std::marker::PhantomData,
+            _marker: core::marker::PhantomData,
         })
     }
 }

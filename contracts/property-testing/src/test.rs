@@ -334,15 +334,14 @@ fn test_property_validator_validate_all() {
     let env = Env::default();
     let validator = PropertyValidator::new(&env);
 
-    let mut all_pass = Vec::new(&env);
-    all_pass.push_back(Ok(()));
-    all_pass.push_back(Ok(()));
+    let all_pass = std::vec![Ok(()), Ok(())];
     assert!(validator.validate_all(all_pass).is_ok());
 
-    let mut some_fail = Vec::new(&env);
-    some_fail.push_back(Ok(()));
-    some_fail.push_back(Err(String::from_str(&env, "err1")));
-    some_fail.push_back(Err(String::from_str(&env, "err2")));
+    let some_fail = std::vec![
+        Ok(()),
+        Err(String::from_str(&env, "err1")),
+        Err(String::from_str(&env, "err2")),
+    ];
     let result = validator.validate_all(some_fail);
     assert!(result.is_err());
     assert_eq!(result.unwrap_err().len(), 2);
@@ -382,7 +381,7 @@ fn test_property_tester_empty_inputs() {
     let env = Env::default();
     let tester = PropertyTester::new(&env);
 
-    let inputs = Vec::new(&env);
+    let inputs: Vec<i32> = Vec::new(&env);
     let result = tester.test(inputs, |_| Ok(()));
     assert!(result.passed);
     assert_eq!(result.iterations, 0);

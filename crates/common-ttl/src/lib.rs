@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::Env;
+use soroban_sdk::{Env, IntoVal, Val};
 
 pub const DEFAULT_INSTANCE_TTL_THRESHOLD: u32 = 518_400; // ~6 days
 pub const DEFAULT_INSTANCE_TTL_BUMP: u32 = 1_555_200; // ~18 days
@@ -10,8 +10,13 @@ pub const DEFAULT_PERSISTENT_TTL_BUMP: u32 = 7_776_000; // ~90 days
 pub trait TTLExtender {
     fn extend_instance_ttl(env: &Env);
     fn extend_instance_ttl_custom(env: &Env, threshold: u32, bump: u32);
-    fn extend_persistent_ttl(env: &Env);
-    fn extend_persistent_ttl_custom(env: &Env, threshold: u32, bump: u32);
+    fn extend_persistent_ttl<K: IntoVal<Env, Val>>(env: &Env, key: &K);
+    fn extend_persistent_ttl_custom<K: IntoVal<Env, Val>>(
+        env: &Env,
+        key: &K,
+        threshold: u32,
+        bump: u32,
+    );
 }
 
 pub struct AutoTTL;
@@ -27,17 +32,22 @@ impl TTLExtender for AutoTTL {
         env.storage().instance().extend_ttl(threshold, bump);
     }
 
-    fn extend_persistent_ttl(env: &Env) {
-        // Extend all persistent keys with default values
-        // Note: Soroban v22+ has refined TTL extension patterns
+    fn extend_persistent_ttl<K: IntoVal<Env, Val>>(env: &Env, key: &K) {
+        // Extend persistent key with default values
         env.storage().persistent().extend_ttl(
+            key,
             DEFAULT_PERSISTENT_TTL_THRESHOLD,
             DEFAULT_PERSISTENT_TTL_BUMP,
         );
     }
 
-    fn extend_persistent_ttl_custom(env: &Env, threshold: u32, bump: u32) {
-        env.storage().persistent().extend_ttl(threshold, bump);
+    fn extend_persistent_ttl_custom<K: IntoVal<Env, Val>>(
+        env: &Env,
+        key: &K,
+        threshold: u32,
+        bump: u32,
+    ) {
+        env.storage().persistent().extend_ttl(key, threshold, bump);
     }
 }
 
@@ -64,6 +74,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_constants_are_reasonable() {
         assert!(DEFAULT_INSTANCE_TTL_THRESHOLD < DEFAULT_INSTANCE_TTL_BUMP);
         assert!(DEFAULT_PERSISTENT_TTL_THRESHOLD < DEFAULT_PERSISTENT_TTL_BUMP);
