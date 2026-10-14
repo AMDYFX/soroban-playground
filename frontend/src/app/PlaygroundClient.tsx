@@ -734,6 +734,7 @@ export default function Home() {
         wasmPath: string;
         deployedAt: string;
         message: string;
+        ledgerState?: LedgerState;
       }>("/api/deploy", {
         wasmPath: lastArtifactName,
         contractName: "hello_contract",
@@ -743,24 +744,21 @@ export default function Home() {
       setContractId(payload.contractId);
       setContractAbi([]);
       setLastDeployMessage(payload.message);
-      setStorage({
+      const deployedStorage: LedgerState = {
         contractName: payload.contractName,
         network: payload.network,
         wasmPath: payload.wasmPath,
         deployedAt: payload.deployedAt,
-      });
+        ...(payload.ledgerState ?? {}),
+      };
+      setStorage(deployedStorage);
       setStorageContextLabel("Latest contract snapshot");
       setTransactionGraph({ nodes: [], edges: [] });
       setSelectedGraphNodeId(undefined);
       dispatchStorageTimeline({
         type: "reset_with_deployment",
         contractId: payload.contractId,
-        state: {
-          contractName: payload.contractName,
-          network: payload.network,
-          wasmPath: payload.wasmPath,
-          deployedAt: payload.deployedAt,
-        },
+        state: deployedStorage,
         capturedAt: payload.deployedAt,
       });
 

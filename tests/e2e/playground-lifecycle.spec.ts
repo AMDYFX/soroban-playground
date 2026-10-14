@@ -286,7 +286,7 @@ test.describe("playground lifecycle", () => {
     await expect(page.getByText(/Compiled successfully/).first()).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole("button", { name: "Deploy to Testnet" }).click();
-    await expect(page.getByText(CONTRACT_ID)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(CONTRACT_ID).first()).toBeVisible({ timeout: 30_000 });
 
     const invokeButton = page.getByRole("button", { name: "Invoke Function" });
     await expect(invokeButton).toBeEnabled({ timeout: 15_000 });
